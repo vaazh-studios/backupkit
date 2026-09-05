@@ -16,3 +16,5 @@ dependencyResolutionManagement {
 }
 
 include(":backupkit")
+include(":sample:shared")
+include(":sample:androidApp")

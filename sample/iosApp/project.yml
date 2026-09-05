@@ -1,0 +1,24 @@
+name: iosApp
+options:
+  bundleIdPrefix: com.vocabloot.backupkit
+  deploymentTarget:
+    iOS: "16.0"
+targets:
+  iosApp:
+    type: application
+    platform: iOS
+    sources: [iosApp]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.vocabloot.backupkit.sample
+        CODE_SIGN_ENTITLEMENTS: iosApp/iosApp.entitlements
+        DEVELOPMENT_TEAM: ""   # set your team id
+        FRAMEWORK_SEARCH_PATHS: $(SRCROOT)/../shared/build/xcode-frameworks/$(CONFIGURATION)/$(SDK_NAME)
+        OTHER_LDFLAGS: $(inherited) -framework ComposeApp
+        INFOPLIST_FILE: iosApp/Info.plist
+        "EXCLUDED_ARCHS[sdk=iphonesimulator*]": x86_64
+    preBuildScripts:
+      - name: Compile Kotlin Framework
+        script: |
+          cd "$SRCROOT/../.."
+          ./gradlew :sample:shared:embedAndSignAppleFrameworkForXcode

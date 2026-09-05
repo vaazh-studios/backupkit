@@ -8,3 +8,4 @@ local.properties
 .DS_Store
 xcuserdata/
 sample/iosApp/iosApp.xcodeproj/project.xcworkspace/
+sample/iosApp/iosApp.xcodeproj/xcuserdata/
