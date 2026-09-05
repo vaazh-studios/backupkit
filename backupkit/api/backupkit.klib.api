@@ -1,0 +1,29 @@
+// Klib ABI Dump
+// Targets: [iosArm64, iosSimulatorArm64, iosX64]
+// Rendering settings:
+// - Signature version: 2
+// - Show manifest properties: true
+// - Show declarations: true
+
+// Library unique name: <com.vocabloot:backupkit>
+final enum class com.vocabloot.backupkit/LogLevel : kotlin/Enum<com.vocabloot.backupkit/LogLevel> { // com.vocabloot.backupkit/LogLevel|null[0]
+    enum entry Debug // com.vocabloot.backupkit/LogLevel.Debug|null[0]
+    enum entry Info // com.vocabloot.backupkit/LogLevel.Info|null[0]
+    enum entry Warn // com.vocabloot.backupkit/LogLevel.Warn|null[0]
+
+    final val entries // com.vocabloot.backupkit/LogLevel.entries|#static{}entries[0]
+        final fun <get-entries>(): kotlin.enums/EnumEntries<com.vocabloot.backupkit/LogLevel> // com.vocabloot.backupkit/LogLevel.entries.<get-entries>|<get-entries>#static(){}[0]
+
+    final fun valueOf(kotlin/String): com.vocabloot.backupkit/LogLevel // com.vocabloot.backupkit/LogLevel.valueOf|valueOf#static(kotlin.String){}[0]
+    final fun values(): kotlin/Array<com.vocabloot.backupkit/LogLevel> // com.vocabloot.backupkit/LogLevel.values|values#static(){}[0]
+}
+
+abstract fun interface com.vocabloot.backupkit/BackupKitLogger { // com.vocabloot.backupkit/BackupKitLogger|null[0]
+    abstract fun log(com.vocabloot.backupkit/LogLevel, kotlin/String, kotlin/String, kotlin/Throwable?) // com.vocabloot.backupkit/BackupKitLogger.log|log(com.vocabloot.backupkit.LogLevel;kotlin.String;kotlin.String;kotlin.Throwable?){}[0]
+}
+
+final object com.vocabloot.backupkit/BackupKit { // com.vocabloot.backupkit/BackupKit|null[0]
+    final var logger // com.vocabloot.backupkit/BackupKit.logger|{}logger[0]
+        final fun <get-logger>(): com.vocabloot.backupkit/BackupKitLogger // com.vocabloot.backupkit/BackupKit.logger.<get-logger>|<get-logger>(){}[0]
+        final fun <set-logger>(com.vocabloot.backupkit/BackupKitLogger) // com.vocabloot.backupkit/BackupKit.logger.<set-logger>|<set-logger>(com.vocabloot.backupkit.BackupKitLogger){}[0]
+}
