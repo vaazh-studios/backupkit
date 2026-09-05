@@ -17,7 +17,7 @@ app-data folder on Android. No server, no account on your side, no OAuth client 
 - **Complete-or-absent sync.** `SyncEngine` diffs, orders uploads so a marker file lands last, saves state after every step, resumes after a kill, and detects an account switch instead of merging two accounts.
 - **Restore offer on first launch.** One call tells you whether a backup exists and what its header says.
 - **Typed errors.** Every failure is one of seven `CloudError` values; nothing platform-specific leaks out.
-- **Small.** Coroutines, kotlinx-serialization, kotlinx-io, Ktor, and Play Services Identity on Android. No DI framework, no Compose, no Firebase.
+- **Small.** About 1,200 lines. Coroutines, kotlinx-serialization and kotlinx-io in common code; Ktor and Play Services Identity on Android only; iOS links no HTTP client. No DI framework, no Compose, no Firebase.
 
 ## Support matrix
 
@@ -184,7 +184,7 @@ inspired Layer 2's "engine owns the state" shape.
 
 ## Dependencies
 
-`kotlinx-coroutines-core` (exposed), `kotlinx-serialization-json`, `kotlinx-io-core`, `ktor-client-core` (+ OkHttp engine on Android), `play-services-auth` (Android). Nothing else.
+Common: `kotlinx-coroutines-core` (exposed), `kotlinx-serialization-json`, `kotlinx-io-core`. Android only: `ktor-client-core` (exposed, pass your own `HttpClient` if you have one) with the OkHttp engine, and `play-services-auth`. iOS links no HTTP client at all. Nothing else.
 
 ## License
 

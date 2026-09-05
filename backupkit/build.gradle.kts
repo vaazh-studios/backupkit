@@ -32,17 +32,18 @@ kotlin {
             api(libs.coroutines.core)
             implementation(libs.serialization.json)
             implementation(libs.kotlinx.io.core)
-            implementation(libs.ktor.client.core)
         }
         commonTest.dependencies {
             implementation(kotlin("test"))
             implementation(libs.coroutines.test)
-            implementation(libs.ktor.client.mock)
         }
         androidMain.dependencies {
             api(libs.ktor.client.core)
             implementation(libs.ktor.client.okhttp)
             implementation(libs.play.services.auth)
+        }
+        getByName("androidHostTest").dependencies {
+            implementation(libs.ktor.client.mock)
         }
     }
 }
