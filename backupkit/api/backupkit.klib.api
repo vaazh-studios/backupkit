@@ -6,6 +6,33 @@
 // - Show declarations: true
 
 // Library unique name: <com.vocabloot:backupkit>
+final enum class com.vocabloot.backupkit/CloudError : kotlin/Enum<com.vocabloot.backupkit/CloudError> { // com.vocabloot.backupkit/CloudError|null[0]
+    enum entry AuthRevoked // com.vocabloot.backupkit/CloudError.AuthRevoked|null[0]
+    enum entry NeedsConsent // com.vocabloot.backupkit/CloudError.NeedsConsent|null[0]
+    enum entry NotAvailable // com.vocabloot.backupkit/CloudError.NotAvailable|null[0]
+    enum entry NotFound // com.vocabloot.backupkit/CloudError.NotFound|null[0]
+    enum entry Offline // com.vocabloot.backupkit/CloudError.Offline|null[0]
+    enum entry StorageFull // com.vocabloot.backupkit/CloudError.StorageFull|null[0]
+    enum entry Transport // com.vocabloot.backupkit/CloudError.Transport|null[0]
+
+    final val entries // com.vocabloot.backupkit/CloudError.entries|#static{}entries[0]
+        final fun <get-entries>(): kotlin.enums/EnumEntries<com.vocabloot.backupkit/CloudError> // com.vocabloot.backupkit/CloudError.entries.<get-entries>|<get-entries>#static(){}[0]
+
+    final fun valueOf(kotlin/String): com.vocabloot.backupkit/CloudError // com.vocabloot.backupkit/CloudError.valueOf|valueOf#static(kotlin.String){}[0]
+    final fun values(): kotlin/Array<com.vocabloot.backupkit/CloudError> // com.vocabloot.backupkit/CloudError.values|values#static(){}[0]
+}
+
+final enum class com.vocabloot.backupkit/CloudProvider : kotlin/Enum<com.vocabloot.backupkit/CloudProvider> { // com.vocabloot.backupkit/CloudProvider|null[0]
+    enum entry GoogleDrive // com.vocabloot.backupkit/CloudProvider.GoogleDrive|null[0]
+    enum entry ICloud // com.vocabloot.backupkit/CloudProvider.ICloud|null[0]
+
+    final val entries // com.vocabloot.backupkit/CloudProvider.entries|#static{}entries[0]
+        final fun <get-entries>(): kotlin.enums/EnumEntries<com.vocabloot.backupkit/CloudProvider> // com.vocabloot.backupkit/CloudProvider.entries.<get-entries>|<get-entries>#static(){}[0]
+
+    final fun valueOf(kotlin/String): com.vocabloot.backupkit/CloudProvider // com.vocabloot.backupkit/CloudProvider.valueOf|valueOf#static(kotlin.String){}[0]
+    final fun values(): kotlin/Array<com.vocabloot.backupkit/CloudProvider> // com.vocabloot.backupkit/CloudProvider.values|values#static(){}[0]
+}
+
 final enum class com.vocabloot.backupkit/LogLevel : kotlin/Enum<com.vocabloot.backupkit/LogLevel> { // com.vocabloot.backupkit/LogLevel|null[0]
     enum entry Debug // com.vocabloot.backupkit/LogLevel.Debug|null[0]
     enum entry Info // com.vocabloot.backupkit/LogLevel.Info|null[0]
@@ -22,8 +49,72 @@ abstract fun interface com.vocabloot.backupkit/BackupKitLogger { // com.vocabloo
     abstract fun log(com.vocabloot.backupkit/LogLevel, kotlin/String, kotlin/String, kotlin/Throwable?) // com.vocabloot.backupkit/BackupKitLogger.log|log(com.vocabloot.backupkit.LogLevel;kotlin.String;kotlin.String;kotlin.Throwable?){}[0]
 }
 
+abstract interface com.vocabloot.backupkit/CloudStorage { // com.vocabloot.backupkit/CloudStorage|null[0]
+    abstract val provider // com.vocabloot.backupkit/CloudStorage.provider|{}provider[0]
+        abstract fun <get-provider>(): com.vocabloot.backupkit/CloudProvider // com.vocabloot.backupkit/CloudStorage.provider.<get-provider>|<get-provider>(){}[0]
+
+    abstract suspend fun availability(): com.vocabloot.backupkit/CloudAvailability // com.vocabloot.backupkit/CloudStorage.availability|availability(){}[0]
+    abstract suspend fun delete(kotlin/String, kotlin/String? = ...) // com.vocabloot.backupkit/CloudStorage.delete|delete(kotlin.String;kotlin.String?){}[0]
+    abstract suspend fun downloadFile(kotlin/String, kotlin/String, kotlin/String? = ...) // com.vocabloot.backupkit/CloudStorage.downloadFile|downloadFile(kotlin.String;kotlin.String;kotlin.String?){}[0]
+    abstract suspend fun exists(kotlin/String): kotlin/Boolean // com.vocabloot.backupkit/CloudStorage.exists|exists(kotlin.String){}[0]
+    abstract suspend fun identityKey(): kotlin/String? // com.vocabloot.backupkit/CloudStorage.identityKey|identityKey(){}[0]
+    abstract suspend fun list(): kotlin.collections/List<com.vocabloot.backupkit/RemoteFile> // com.vocabloot.backupkit/CloudStorage.list|list(){}[0]
+    abstract suspend fun readBytes(kotlin/String, kotlin/String? = ...): kotlin/ByteArray? // com.vocabloot.backupkit/CloudStorage.readBytes|readBytes(kotlin.String;kotlin.String?){}[0]
+    abstract suspend fun writeBytes(kotlin/String, kotlin/ByteArray, kotlin/String, kotlin/String? = ...): kotlin/String? // com.vocabloot.backupkit/CloudStorage.writeBytes|writeBytes(kotlin.String;kotlin.ByteArray;kotlin.String;kotlin.String?){}[0]
+    abstract suspend fun writeFile(kotlin/String, kotlin/String, kotlin/String, kotlin/String? = ...): kotlin/String? // com.vocabloot.backupkit/CloudStorage.writeFile|writeFile(kotlin.String;kotlin.String;kotlin.String;kotlin.String?){}[0]
+}
+
+sealed interface com.vocabloot.backupkit/CloudAvailability { // com.vocabloot.backupkit/CloudAvailability|null[0]
+    final object Available : com.vocabloot.backupkit/CloudAvailability { // com.vocabloot.backupkit/CloudAvailability.Available|null[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // com.vocabloot.backupkit/CloudAvailability.Available.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // com.vocabloot.backupkit/CloudAvailability.Available.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // com.vocabloot.backupkit/CloudAvailability.Available.toString|toString(){}[0]
+    }
+
+    final object NeedsConsent : com.vocabloot.backupkit/CloudAvailability { // com.vocabloot.backupkit/CloudAvailability.NeedsConsent|null[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // com.vocabloot.backupkit/CloudAvailability.NeedsConsent.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // com.vocabloot.backupkit/CloudAvailability.NeedsConsent.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // com.vocabloot.backupkit/CloudAvailability.NeedsConsent.toString|toString(){}[0]
+    }
+
+    final object NoAccount : com.vocabloot.backupkit/CloudAvailability { // com.vocabloot.backupkit/CloudAvailability.NoAccount|null[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // com.vocabloot.backupkit/CloudAvailability.NoAccount.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // com.vocabloot.backupkit/CloudAvailability.NoAccount.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // com.vocabloot.backupkit/CloudAvailability.NoAccount.toString|toString(){}[0]
+    }
+}
+
+final class com.vocabloot.backupkit/CloudStorageException : kotlin/Exception { // com.vocabloot.backupkit/CloudStorageException|null[0]
+    constructor <init>(com.vocabloot.backupkit/CloudError, kotlin/String, kotlin/Throwable? = ...) // com.vocabloot.backupkit/CloudStorageException.<init>|<init>(com.vocabloot.backupkit.CloudError;kotlin.String;kotlin.Throwable?){}[0]
+
+    final val error // com.vocabloot.backupkit/CloudStorageException.error|{}error[0]
+        final fun <get-error>(): com.vocabloot.backupkit/CloudError // com.vocabloot.backupkit/CloudStorageException.error.<get-error>|<get-error>(){}[0]
+}
+
+final class com.vocabloot.backupkit/RemoteFile { // com.vocabloot.backupkit/RemoteFile|null[0]
+    constructor <init>(kotlin/String, kotlin/Long, kotlin/String?) // com.vocabloot.backupkit/RemoteFile.<init>|<init>(kotlin.String;kotlin.Long;kotlin.String?){}[0]
+
+    final val path // com.vocabloot.backupkit/RemoteFile.path|{}path[0]
+        final fun <get-path>(): kotlin/String // com.vocabloot.backupkit/RemoteFile.path.<get-path>|<get-path>(){}[0]
+    final val remoteId // com.vocabloot.backupkit/RemoteFile.remoteId|{}remoteId[0]
+        final fun <get-remoteId>(): kotlin/String? // com.vocabloot.backupkit/RemoteFile.remoteId.<get-remoteId>|<get-remoteId>(){}[0]
+    final val size // com.vocabloot.backupkit/RemoteFile.size|{}size[0]
+        final fun <get-size>(): kotlin/Long // com.vocabloot.backupkit/RemoteFile.size.<get-size>|<get-size>(){}[0]
+
+    final fun component1(): kotlin/String // com.vocabloot.backupkit/RemoteFile.component1|component1(){}[0]
+    final fun component2(): kotlin/Long // com.vocabloot.backupkit/RemoteFile.component2|component2(){}[0]
+    final fun component3(): kotlin/String? // com.vocabloot.backupkit/RemoteFile.component3|component3(){}[0]
+    final fun copy(kotlin/String = ..., kotlin/Long = ..., kotlin/String? = ...): com.vocabloot.backupkit/RemoteFile // com.vocabloot.backupkit/RemoteFile.copy|copy(kotlin.String;kotlin.Long;kotlin.String?){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // com.vocabloot.backupkit/RemoteFile.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // com.vocabloot.backupkit/RemoteFile.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // com.vocabloot.backupkit/RemoteFile.toString|toString(){}[0]
+}
+
 final object com.vocabloot.backupkit/BackupKit { // com.vocabloot.backupkit/BackupKit|null[0]
     final var logger // com.vocabloot.backupkit/BackupKit.logger|{}logger[0]
         final fun <get-logger>(): com.vocabloot.backupkit/BackupKitLogger // com.vocabloot.backupkit/BackupKit.logger.<get-logger>|<get-logger>(){}[0]
         final fun <set-logger>(com.vocabloot.backupkit/BackupKitLogger) // com.vocabloot.backupkit/BackupKit.logger.<set-logger>|<set-logger>(com.vocabloot.backupkit.BackupKitLogger){}[0]
 }
+
+final fun com.vocabloot.backupkit/defaultMimeType(kotlin/String): kotlin/String // com.vocabloot.backupkit/defaultMimeType|defaultMimeType(kotlin.String){}[0]
+final fun com.vocabloot.backupkit/sha256Hex(kotlin/ByteArray): kotlin/String // com.vocabloot.backupkit/sha256Hex|sha256Hex(kotlin.ByteArray){}[0]
