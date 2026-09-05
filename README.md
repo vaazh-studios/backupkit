@@ -3,15 +3,41 @@
 Kotlin Multiplatform backup into the user's **own** cloud: iCloud Drive on iOS, the Google Drive
 app-data folder on Android. No server, no account on your side, no OAuth client setup on iOS.
 
-[![Maven Central](https://img.shields.io/maven-central/v/com.vocabloot/backupkit)](https://central.sonatype.com/artifact/com.vocabloot/backupkit)
+![Android](https://img.shields.io/badge/Android-3DDC84?logo=android&logoColor=white)
+![iOS](https://img.shields.io/badge/iOS-000000?logo=apple&logoColor=white)
+[![Maven Central](https://img.shields.io/maven-central/v/com.vocabloot/backupkit?label=Maven%20Central)](https://central.sonatype.com/artifact/com.vocabloot/backupkit)
 [![CI](https://github.com/vaazh-studios/backupkit/actions/workflows/ci.yml/badge.svg)](https://github.com/vaazh-studios/backupkit/actions/workflows/ci.yml)
+[![Kotlin](https://img.shields.io/badge/Kotlin-2.3.20-7F52FF?logo=kotlin&logoColor=white)](https://kotlinlang.org)
+[![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
 
-## Why
+## Features
 
-Most apps that promise "backup" run a server and an account. Both platforms already give every
-user a private, quota-backed folder that only your app can see: the iCloud ubiquity container and
-Drive's `appDataFolder` (the one WhatsApp uses). BackupKit is the missing Kotlin layer over both,
-extracted from [Vocabloot](https://vocabloot.com), where it ships in production.
+- **The user's cloud, not yours.** Files land in the app's private iCloud container or Drive's hidden `appDataFolder` (the one WhatsApp uses). Nothing to host, no accounts to run.
+- **Zero code on iOS, one tap on Android.** The iCloud entitlement is the whole iOS setup; on Android the user sees Google's permission dialog once, then tokens are silent.
+- **Complete-or-absent sync.** `SyncEngine` diffs, orders uploads so a marker file lands last, saves state after every step, resumes after a kill, and detects an account switch instead of merging two accounts.
+- **Restore offer on first launch.** One call tells you whether a backup exists and what its header says.
+- **Typed errors.** Every failure is one of seven `CloudError` values; nothing platform-specific leaks out.
+- **Small.** Coroutines, kotlinx-serialization, kotlinx-io, Ktor, and Play Services Identity on Android. No DI framework, no Compose, no Firebase.
+
+## Support matrix
+
+| | iCloud Drive (iOS) | Google Drive app-data (Android) |
+|---|---|---|
+| Transport `CloudStorage` | ✅ `ICloudStorage` | ✅ `GoogleDriveStorage` |
+| Sync `SyncEngine` | ✅ | ✅ |
+| Auth | entitlement only | silent token, `DriveConsent` for the one-time dialog |
+| Nested paths | ✅ | flat folder, path used as file name |
+| File ids | – | `RemoteFile.remoteId` |
+| Single upload cap | container quota | 5 MB (multipart) |
+| Verified on a real device | ships in Vocabloot; sample pass pending | ships in Vocabloot, device pass 2026-09-02 |
+
+Targets: `android`, `iosArm64`, `iosSimulatorArm64`, `iosX64`. Kotlin 2.3.20, minSdk 24, iOS 16+.
+
+## Who's using it
+
+- [Vocabloot](https://vocabloot.com) ([App Store](https://apps.apple.com/app/id6792888619), [Google Play](https://play.google.com/store/apps/details?id=com.tntstudios.snaplingo)): a photo-to-vocabulary app whose wordbook, photos and doodles mirror through this exact code. BackupKit is that code, extracted.
+
+Using BackupKit? Open a PR and add yourself.
 
 ## Install
 
@@ -22,6 +48,32 @@ commonMain.dependencies {
 ```
 
 Then do the platform setup once: [iOS](docs/setup-ios.md) (an entitlement), [Android](docs/setup-android.md) (a Google Cloud OAuth client).
+
+## Try it before the first release
+
+`0.1.0` is being published to Maven Central. Until it resolves, either of these works:
+
+**Local Maven.** Clone, publish to `~/.m2`, and add `mavenLocal()` to your repositories:
+
+```bash
+git clone https://github.com/vaazh-studios/backupkit.git
+cd backupkit && ./gradlew :backupkit:publishToMavenLocal
+```
+
+**Composite build.** Point your `settings.gradle.kts` at the checkout and depend on it as if it were published:
+
+```kotlin
+includeBuild("../backupkit")
+```
+
+**Run the sample.** A Compose Multiplatform notes app that adds, deletes, syncs, and offers a restore:
+
+```bash
+./gradlew :sample:androidApp:installDebug          # Android device or emulator
+brew install xcodegen && cd sample/iosApp && xcodegen generate && open iosApp.xcodeproj   # iOS: set your team, run on a device signed into iCloud
+```
+
+The sample needs its own iCloud container (`iCloud.com.vocabloot.backupkit.sample`) and, on Android, an OAuth client for its package and your signing SHA-1; the setup guides walk through both. Source: [`sample/shared`](sample/shared/src/commonMain/kotlin/com/vocabloot/backupkit/sample), [`sample/androidApp`](sample/androidApp), [`sample/iosApp`](sample/iosApp).
 
 ## Quickstart
 
@@ -121,6 +173,18 @@ Every failure is a `CloudStorageException` carrying one `CloudError`:
 [react-native-cloud-storage](https://github.com/kuatsu/react-native-cloud-storage) inspired the
 Layer 1 verbs. [IceCream](https://github.com/caiyue1993/IceCream) and Apple's `CKSyncEngine`
 inspired Layer 2's "engine owns the state" shape.
+
+## Documentation
+
+- [iOS setup](docs/setup-ios.md), [Android setup](docs/setup-android.md)
+- [The SyncEngine contract](docs/contract.md): the ten guarantees and the error mapping
+- [Bring your own scheduler](docs/scheduling.md)
+- [Design](docs/design.md), [Publishing](docs/publishing.md) (maintainers)
+- API reference: KDoc on every public declaration; the ABI is tracked in [`backupkit/api`](backupkit/api).
+
+## Dependencies
+
+`kotlinx-coroutines-core` (exposed), `kotlinx-serialization-json`, `kotlinx-io-core`, `ktor-client-core` (+ OkHttp engine on Android), `play-services-auth` (Android). Nothing else.
 
 ## License
 
