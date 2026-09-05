@@ -64,6 +64,12 @@ abstract interface com.vocabloot.backupkit/CloudStorage { // com.vocabloot.backu
     abstract suspend fun writeFile(kotlin/String, kotlin/String, kotlin/String, kotlin/String? = ...): kotlin/String? // com.vocabloot.backupkit/CloudStorage.writeFile|writeFile(kotlin.String;kotlin.String;kotlin.String;kotlin.String?){}[0]
 }
 
+abstract interface com.vocabloot.backupkit/SyncStateStore { // com.vocabloot.backupkit/SyncStateStore|null[0]
+    abstract fun clear() // com.vocabloot.backupkit/SyncStateStore.clear|clear(){}[0]
+    abstract fun load(): com.vocabloot.backupkit/SyncState // com.vocabloot.backupkit/SyncStateStore.load|load(){}[0]
+    abstract fun save(com.vocabloot.backupkit/SyncState) // com.vocabloot.backupkit/SyncStateStore.save|save(com.vocabloot.backupkit.SyncState){}[0]
+}
+
 sealed interface com.vocabloot.backupkit/CloudAvailability { // com.vocabloot.backupkit/CloudAvailability|null[0]
     final object Available : com.vocabloot.backupkit/CloudAvailability { // com.vocabloot.backupkit/CloudAvailability.Available|null[0]
         final fun equals(kotlin/Any?): kotlin/Boolean // com.vocabloot.backupkit/CloudAvailability.Available.equals|equals(kotlin.Any?){}[0]
@@ -91,6 +97,14 @@ final class com.vocabloot.backupkit/CloudStorageException : kotlin/Exception { /
         final fun <get-error>(): com.vocabloot.backupkit/CloudError // com.vocabloot.backupkit/CloudStorageException.error.<get-error>|<get-error>(){}[0]
 }
 
+final class com.vocabloot.backupkit/FileSyncStateStore : com.vocabloot.backupkit/SyncStateStore { // com.vocabloot.backupkit/FileSyncStateStore|null[0]
+    constructor <init>(kotlin/String) // com.vocabloot.backupkit/FileSyncStateStore.<init>|<init>(kotlin.String){}[0]
+
+    final fun clear() // com.vocabloot.backupkit/FileSyncStateStore.clear|clear(){}[0]
+    final fun load(): com.vocabloot.backupkit/SyncState // com.vocabloot.backupkit/FileSyncStateStore.load|load(){}[0]
+    final fun save(com.vocabloot.backupkit/SyncState) // com.vocabloot.backupkit/FileSyncStateStore.save|save(com.vocabloot.backupkit.SyncState){}[0]
+}
+
 final class com.vocabloot.backupkit/RemoteFile { // com.vocabloot.backupkit/RemoteFile|null[0]
     constructor <init>(kotlin/String, kotlin/Long, kotlin/String?) // com.vocabloot.backupkit/RemoteFile.<init>|<init>(kotlin.String;kotlin.Long;kotlin.String?){}[0]
 
@@ -108,6 +122,78 @@ final class com.vocabloot.backupkit/RemoteFile { // com.vocabloot.backupkit/Remo
     final fun equals(kotlin/Any?): kotlin/Boolean // com.vocabloot.backupkit/RemoteFile.equals|equals(kotlin.Any?){}[0]
     final fun hashCode(): kotlin/Int // com.vocabloot.backupkit/RemoteFile.hashCode|hashCode(){}[0]
     final fun toString(): kotlin/String // com.vocabloot.backupkit/RemoteFile.toString|toString(){}[0]
+}
+
+final class com.vocabloot.backupkit/SyncState { // com.vocabloot.backupkit/SyncState|null[0]
+    constructor <init>(kotlin/String = ..., kotlin/String = ..., kotlin.collections/Map<kotlin/String, com.vocabloot.backupkit/SyncedEntry> = ..., kotlin/Long? = ..., kotlin/Int = ...) // com.vocabloot.backupkit/SyncState.<init>|<init>(kotlin.String;kotlin.String;kotlin.collections.Map<kotlin.String,com.vocabloot.backupkit.SyncedEntry>;kotlin.Long?;kotlin.Int){}[0]
+
+    final val entries // com.vocabloot.backupkit/SyncState.entries|{}entries[0]
+        final fun <get-entries>(): kotlin.collections/Map<kotlin/String, com.vocabloot.backupkit/SyncedEntry> // com.vocabloot.backupkit/SyncState.entries.<get-entries>|<get-entries>(){}[0]
+    final val identityKey // com.vocabloot.backupkit/SyncState.identityKey|{}identityKey[0]
+        final fun <get-identityKey>(): kotlin/String // com.vocabloot.backupkit/SyncState.identityKey.<get-identityKey>|<get-identityKey>(){}[0]
+    final val lastEntryCount // com.vocabloot.backupkit/SyncState.lastEntryCount|{}lastEntryCount[0]
+        final fun <get-lastEntryCount>(): kotlin/Int // com.vocabloot.backupkit/SyncState.lastEntryCount.<get-lastEntryCount>|<get-lastEntryCount>(){}[0]
+    final val lastSuccessEpochMs // com.vocabloot.backupkit/SyncState.lastSuccessEpochMs|{}lastSuccessEpochMs[0]
+        final fun <get-lastSuccessEpochMs>(): kotlin/Long? // com.vocabloot.backupkit/SyncState.lastSuccessEpochMs.<get-lastSuccessEpochMs>|<get-lastSuccessEpochMs>(){}[0]
+    final val provider // com.vocabloot.backupkit/SyncState.provider|{}provider[0]
+        final fun <get-provider>(): kotlin/String // com.vocabloot.backupkit/SyncState.provider.<get-provider>|<get-provider>(){}[0]
+
+    final fun component1(): kotlin/String // com.vocabloot.backupkit/SyncState.component1|component1(){}[0]
+    final fun component2(): kotlin/String // com.vocabloot.backupkit/SyncState.component2|component2(){}[0]
+    final fun component3(): kotlin.collections/Map<kotlin/String, com.vocabloot.backupkit/SyncedEntry> // com.vocabloot.backupkit/SyncState.component3|component3(){}[0]
+    final fun component4(): kotlin/Long? // com.vocabloot.backupkit/SyncState.component4|component4(){}[0]
+    final fun component5(): kotlin/Int // com.vocabloot.backupkit/SyncState.component5|component5(){}[0]
+    final fun copy(kotlin/String = ..., kotlin/String = ..., kotlin.collections/Map<kotlin/String, com.vocabloot.backupkit/SyncedEntry> = ..., kotlin/Long? = ..., kotlin/Int = ...): com.vocabloot.backupkit/SyncState // com.vocabloot.backupkit/SyncState.copy|copy(kotlin.String;kotlin.String;kotlin.collections.Map<kotlin.String,com.vocabloot.backupkit.SyncedEntry>;kotlin.Long?;kotlin.Int){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // com.vocabloot.backupkit/SyncState.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // com.vocabloot.backupkit/SyncState.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // com.vocabloot.backupkit/SyncState.toString|toString(){}[0]
+
+    final object $serializer : kotlinx.serialization.internal/GeneratedSerializer<com.vocabloot.backupkit/SyncState> { // com.vocabloot.backupkit/SyncState.$serializer|null[0]
+        final val descriptor // com.vocabloot.backupkit/SyncState.$serializer.descriptor|{}descriptor[0]
+            final fun <get-descriptor>(): kotlinx.serialization.descriptors/SerialDescriptor // com.vocabloot.backupkit/SyncState.$serializer.descriptor.<get-descriptor>|<get-descriptor>(){}[0]
+
+        final fun childSerializers(): kotlin/Array<kotlinx.serialization/KSerializer<*>> // com.vocabloot.backupkit/SyncState.$serializer.childSerializers|childSerializers(){}[0]
+        final fun deserialize(kotlinx.serialization.encoding/Decoder): com.vocabloot.backupkit/SyncState // com.vocabloot.backupkit/SyncState.$serializer.deserialize|deserialize(kotlinx.serialization.encoding.Decoder){}[0]
+        final fun serialize(kotlinx.serialization.encoding/Encoder, com.vocabloot.backupkit/SyncState) // com.vocabloot.backupkit/SyncState.$serializer.serialize|serialize(kotlinx.serialization.encoding.Encoder;com.vocabloot.backupkit.SyncState){}[0]
+    }
+
+    final object Companion { // com.vocabloot.backupkit/SyncState.Companion|null[0]
+        final val $childSerializers // com.vocabloot.backupkit/SyncState.Companion.$childSerializers|{}$childSerializers[0]
+
+        final fun serializer(): kotlinx.serialization/KSerializer<com.vocabloot.backupkit/SyncState> // com.vocabloot.backupkit/SyncState.Companion.serializer|serializer(){}[0]
+    }
+}
+
+final class com.vocabloot.backupkit/SyncedEntry { // com.vocabloot.backupkit/SyncedEntry|null[0]
+    constructor <init>(kotlin/Long, kotlin/String? = ..., kotlin/String? = ...) // com.vocabloot.backupkit/SyncedEntry.<init>|<init>(kotlin.Long;kotlin.String?;kotlin.String?){}[0]
+
+    final val hash // com.vocabloot.backupkit/SyncedEntry.hash|{}hash[0]
+        final fun <get-hash>(): kotlin/String? // com.vocabloot.backupkit/SyncedEntry.hash.<get-hash>|<get-hash>(){}[0]
+    final val remoteId // com.vocabloot.backupkit/SyncedEntry.remoteId|{}remoteId[0]
+        final fun <get-remoteId>(): kotlin/String? // com.vocabloot.backupkit/SyncedEntry.remoteId.<get-remoteId>|<get-remoteId>(){}[0]
+    final val size // com.vocabloot.backupkit/SyncedEntry.size|{}size[0]
+        final fun <get-size>(): kotlin/Long // com.vocabloot.backupkit/SyncedEntry.size.<get-size>|<get-size>(){}[0]
+
+    final fun component1(): kotlin/Long // com.vocabloot.backupkit/SyncedEntry.component1|component1(){}[0]
+    final fun component2(): kotlin/String? // com.vocabloot.backupkit/SyncedEntry.component2|component2(){}[0]
+    final fun component3(): kotlin/String? // com.vocabloot.backupkit/SyncedEntry.component3|component3(){}[0]
+    final fun copy(kotlin/Long = ..., kotlin/String? = ..., kotlin/String? = ...): com.vocabloot.backupkit/SyncedEntry // com.vocabloot.backupkit/SyncedEntry.copy|copy(kotlin.Long;kotlin.String?;kotlin.String?){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // com.vocabloot.backupkit/SyncedEntry.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // com.vocabloot.backupkit/SyncedEntry.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // com.vocabloot.backupkit/SyncedEntry.toString|toString(){}[0]
+
+    final object $serializer : kotlinx.serialization.internal/GeneratedSerializer<com.vocabloot.backupkit/SyncedEntry> { // com.vocabloot.backupkit/SyncedEntry.$serializer|null[0]
+        final val descriptor // com.vocabloot.backupkit/SyncedEntry.$serializer.descriptor|{}descriptor[0]
+            final fun <get-descriptor>(): kotlinx.serialization.descriptors/SerialDescriptor // com.vocabloot.backupkit/SyncedEntry.$serializer.descriptor.<get-descriptor>|<get-descriptor>(){}[0]
+
+        final fun childSerializers(): kotlin/Array<kotlinx.serialization/KSerializer<*>> // com.vocabloot.backupkit/SyncedEntry.$serializer.childSerializers|childSerializers(){}[0]
+        final fun deserialize(kotlinx.serialization.encoding/Decoder): com.vocabloot.backupkit/SyncedEntry // com.vocabloot.backupkit/SyncedEntry.$serializer.deserialize|deserialize(kotlinx.serialization.encoding.Decoder){}[0]
+        final fun serialize(kotlinx.serialization.encoding/Encoder, com.vocabloot.backupkit/SyncedEntry) // com.vocabloot.backupkit/SyncedEntry.$serializer.serialize|serialize(kotlinx.serialization.encoding.Encoder;com.vocabloot.backupkit.SyncedEntry){}[0]
+    }
+
+    final object Companion { // com.vocabloot.backupkit/SyncedEntry.Companion|null[0]
+        final fun serializer(): kotlinx.serialization/KSerializer<com.vocabloot.backupkit/SyncedEntry> // com.vocabloot.backupkit/SyncedEntry.Companion.serializer|serializer(){}[0]
+    }
 }
 
 final object com.vocabloot.backupkit/BackupKit { // com.vocabloot.backupkit/BackupKit|null[0]
