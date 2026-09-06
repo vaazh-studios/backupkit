@@ -42,4 +42,11 @@ public interface CloudStorage {
 
     /** No-op when already absent. */
     public suspend fun delete(path: String, remoteId: String? = null)
+
+    /**
+     * Starts downloading every not-yet-local file in [paths] at once, without waiting. iCloud
+     * only; Drive has nothing to prefetch. Never throws. Call it before a restore so files
+     * download in parallel instead of one at a time.
+     */
+    public suspend fun prefetch(paths: List<String>) {}
 }

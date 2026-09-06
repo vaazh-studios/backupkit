@@ -16,6 +16,11 @@ class FakeCloudStorage(
     var failPutsContaining: String? = null
     var failError: CloudError = CloudError.Transport
     var failDeletes: Boolean = false
+    var failListing: CloudError? = null
+    var failReadsContaining: String? = null
+    var failDownloadsContaining: String? = null
+    val prefetchLog = mutableListOf<List<String>>()
+    val downloadLog = mutableListOf<String>()
 
     val putLog = mutableListOf<String>()
     val deleteLog = mutableListOf<String>()
@@ -26,6 +31,7 @@ class FakeCloudStorage(
 
     override suspend fun list(): List<RemoteFile> {
         listCalls += 1
+        failListing?.let { throw CloudStorageException(it, "listing failed") }
         return remote.map { (path, bytes) -> RemoteFile(path = path, size = bytes.size.toLong(), remoteId = ids[path]) }
     }
 
@@ -47,10 +53,17 @@ class FakeCloudStorage(
         return ids.getValue(path)
     }
 
-    override suspend fun readBytes(path: String, remoteId: String?): ByteArray? = remote[path]
+    override suspend fun readBytes(path: String, remoteId: String?): ByteArray? {
+        failReadsContaining?.let { if (path.contains(it)) throw CloudStorageException(CloudError.Transport, "read failed: $path") }
+        return remote[path]
+    }
+
+    override suspend fun prefetch(paths: List<String>) { prefetchLog += paths }
 
     override suspend fun downloadFile(path: String, toLocalPath: String, remoteId: String?) {
+        failDownloadsContaining?.let { if (path.contains(it)) throw CloudStorageException(CloudError.Transport, "download failed: $path") }
         val bytes = remote[path] ?: throw CloudStorageException(CloudError.NotFound, "remote missing: $path")
+        downloadLog += path
         writeLocal(toLocalPath, bytes)
     }
 

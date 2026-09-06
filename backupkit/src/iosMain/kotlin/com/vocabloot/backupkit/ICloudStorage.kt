@@ -145,6 +145,15 @@ public class ICloudStorage(
         fileManager.contentsAtPath(source)?.toByteArray()
     }
 
+    override suspend fun prefetch(paths: List<String>): Unit = withContext(Dispatchers.IO) {
+        val root = root() ?: return@withContext
+        for (path in paths) {
+            val full = "$root/$path"
+            if (!fileManager.fileExistsAtPath(placeholderPath(full))) continue // already local (or absent)
+            fileManager.startDownloadingUbiquitousItemAtURL(NSURL.fileURLWithPath(full), null)
+        }
+    }
+
     // region container
 
     /** Resolved once per identity, on a background dispatcher (Apple: never on main). */

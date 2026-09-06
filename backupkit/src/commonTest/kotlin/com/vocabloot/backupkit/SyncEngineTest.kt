@@ -311,26 +311,67 @@ class SyncEngineTest {
     }
 
     @Test
-    fun inspect_returns_the_listing_and_marker_bytes() = runTest {
-        val h = harness("a")
-        h.run()
-
-        val inspection = h.engine().inspect()
-
-        assertEquals(CloudAvailability.Available, inspection.availability)
-        assertEquals(5, inspection.files.size)
-        assertTrue(inspection.marker!!.decodeToString().startsWith("{\"count\":1"))
+    fun probe_is_none_when_the_remote_is_empty() = runTest {
+        assertEquals(RemoteProbe.None, harness("a").engine().probe())
     }
 
     @Test
-    fun inspect_reports_no_marker_when_the_remote_set_is_incomplete() = runTest {
+    fun probe_is_not_ready_when_files_exist_without_a_marker() = runTest {
         val h = harness("a")
         h.storage.failPutsContaining = "backup.json"
         h.run()
 
-        val inspection = h.engine().inspect()
+        assertEquals(RemoteProbe.NotReady, h.engine().probe())
+    }
 
-        assertEquals(null, inspection.marker)
-        assertEquals(4, inspection.files.size)
+    @Test
+    fun probe_is_found_with_a_source_reference_after_a_sync() = runTest {
+        val h = harness("a")
+        h.run()
+
+        val probe = h.engine().probe()
+
+        assertIs<RemoteProbe.Found>(probe)
+        assertTrue(probe.marker.decodeToString().startsWith("{\"count\":1"))
+        assertEquals(5, probe.files.size)
+        assertEquals("identity-A", probe.source.identityKey)
+        assertEquals(64, probe.source.markerFingerprint.length)
+        assertTrue(probe.source.matches((h.engine().probe() as RemoteProbe.Found).source))
+    }
+
+    @Test
+    fun probe_reports_unavailable_and_listing_failures() = runTest {
+        val h = harness("a")
+        h.storage.availability = CloudAvailability.NoAccount
+        assertEquals(RemoteProbe.Unavailable(UnavailableReason.NoAccount), h.engine().probe())
+
+        h.storage.availability = CloudAvailability.Available
+        h.storage.failListing = CloudError.Offline
+        assertEquals(RemoteProbe.Failed(CloudError.Offline), h.engine().probe())
+    }
+
+    @Test
+    fun hold_blocks_sync_and_survives_a_reload() = runTest {
+        val h = harness("a")
+        h.engine().setHold(WriteHold.RestoreRunning)
+
+        val outcome = h.run()
+
+        assertEquals(SyncOutcome.Unavailable(UnavailableReason.WriteHeld), outcome)
+        assertEquals(0, h.storage.listCalls)
+        assertEquals(WriteHold.RestoreRunning, h.engine().hold)
+        h.engine().setHold(WriteHold.None)
+        assertIs<SyncOutcome.Synced>(h.run())
+    }
+
+    @Test
+    fun identity_reset_keeps_the_hold() = runTest {
+        val h = harness("a")
+        h.run()
+        h.engine().setHold(WriteHold.RestoreIncomplete)
+        h.storage.identity = "identity-B"
+
+        assertEquals(SyncOutcome.Unavailable(UnavailableReason.WriteHeld), h.run())
+        assertEquals(WriteHold.RestoreIncomplete, h.engine().hold)
     }
 }

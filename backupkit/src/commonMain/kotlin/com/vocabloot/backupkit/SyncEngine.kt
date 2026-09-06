@@ -25,6 +25,7 @@ public class SyncEngine(
             CloudAvailability.NeedsConsent -> return SyncOutcome.Unavailable(UnavailableReason.NeedsConsent)
             CloudAvailability.Available -> Unit
         }
+        if (hold != WriteHold.None) return SyncOutcome.Unavailable(UnavailableReason.WriteHeld)
         return try {
             syncAvailable(snapshot, onProgress)
         } catch (t: Throwable) {
@@ -35,14 +36,41 @@ public class SyncEngine(
         }
     }
 
-    /** For a restore offer: the remote listing plus the marker bytes. Cheap when unavailable. */
-    public suspend fun inspect(): RemoteInspection {
-        val availability = storage.availability()
-        if (availability != CloudAvailability.Available) return RemoteInspection(availability, emptyList(), null)
-        val files = storage.list()
-        val markerFile = files.firstOrNull { it.path == policy.markerPath }
-        val marker = markerFile?.let { storage.readBytes(it.path, it.remoteId) }
-        return RemoteInspection(availability, files, marker)
+    /** The persisted [WriteHold]; [WriteHold.None] when the state is absent or holds an unknown value. */
+    public val hold: WriteHold
+        get() = stateStore.load().hold.let { name -> WriteHold.entries.firstOrNull { it.name == name } ?: WriteHold.None }
+
+    /** Persists [hold] without touching the cached entries. While it is not [WriteHold.None], [sync] writes nothing. */
+    public fun setHold(hold: WriteHold) {
+        stateStore.save(stateStore.load().copy(hold = hold.name))
+    }
+
+    /**
+     * Metadata-only inspection for a restore offer: availability, the listing, and the marker bytes.
+     * Never throws for cloud failures; they come back as [RemoteProbe.Failed].
+     */
+    public suspend fun probe(): RemoteProbe {
+        when (storage.availability()) {
+            CloudAvailability.NoAccount -> return RemoteProbe.Unavailable(UnavailableReason.NoAccount)
+            CloudAvailability.NeedsConsent -> return RemoteProbe.Unavailable(UnavailableReason.NeedsConsent)
+            CloudAvailability.Available -> Unit
+        }
+        val files = try {
+            storage.list()
+        } catch (t: Throwable) {
+            if (t is CancellationException) throw t
+            return RemoteProbe.Failed(errorOf(t))
+        }
+        if (files.isEmpty()) return RemoteProbe.None
+        val marker = files.firstOrNull { it.path == policy.markerPath } ?: return RemoteProbe.NotReady
+        val bytes = try {
+            storage.readBytes(marker.path, marker.remoteId)
+        } catch (t: Throwable) {
+            if (t is CancellationException) throw t
+            return RemoteProbe.Failed(errorOf(t))
+        } ?: return RemoteProbe.NotReady
+        val identity = runCatching { storage.identityKey() }.getOrNull()
+        return RemoteProbe.Found(marker = bytes, source = SourceRef(identity, marker.remoteId, sha256Hex(bytes)), files = files)
     }
 
     private suspend fun syncAvailable(snapshot: SyncSnapshot, onProgress: (Int, Int) -> Unit): SyncOutcome {
@@ -52,7 +80,7 @@ public class SyncEngine(
         val identity = storage.identityKey() ?: remote[policy.markerPath]?.remoteId ?: ""
         if (state.provider != storage.provider.name || state.identityKey != identity) {
             logI(TAG) { "identity changed ('${state.identityKey}' -> '$identity'); resetting sync state" }
-            state = SyncState(provider = storage.provider.name, identityKey = identity)
+            state = SyncState(provider = storage.provider.name, identityKey = identity, hold = state.hold)
         }
         state = state.copy(
             entries = state.entries.filterKeys { it in remote }.mapValues { (path, cached) ->
@@ -134,5 +162,7 @@ public class SyncEngine(
 
     private companion object {
         const val TAG = "SyncEngine"
+
+        fun errorOf(t: Throwable): CloudError = (t as? CloudStorageException)?.error ?: CloudError.Transport
     }
 }

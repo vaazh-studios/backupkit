@@ -1,5 +1,7 @@
 package com.vocabloot.backupkit
 
+import kotlinx.serialization.Serializable
+
 /** Where an entry's bytes come from. */
 public sealed interface SyncSource {
     /** A local file, uploaded as a whole. */
@@ -45,6 +47,36 @@ public enum class UnavailableReason {
 
     /** The snapshot is empty, this device never synced, and the cloud holds a set: restore first or add data on purpose. */
     RestorePending,
+
+    /** A [WriteHold] is set (a restore is running or incomplete); nothing was written. */
+    WriteHeld,
+}
+
+/** Parks [SyncEngine.sync] while a restore runs or is incomplete. Persisted in [SyncState]. */
+public enum class WriteHold { None, RestoreRunning, RestoreIncomplete }
+
+/** Pins the remote set a restore was offered from, so a later resume can detect a switch to another backup. */
+@Serializable
+public data class SourceRef(val identityKey: String?, val markerRemoteId: String?, val markerFingerprint: String) {
+    /** True when both references describe the same remote set. */
+    public fun matches(other: SourceRef): Boolean =
+        identityKey == other.identityKey && markerFingerprint == other.markerFingerprint
+}
+
+/** Typed, metadata-only inspection of the remote set, for a restore offer. */
+public sealed interface RemoteProbe {
+    /** A complete set: the marker is readable. [marker] is its bytes; parse them with your own schema. */
+    public class Found(public val marker: ByteArray, public val source: SourceRef, public val files: List<RemoteFile>) : RemoteProbe
+
+    /** Nothing remote. */
+    public data object None : RemoteProbe
+
+    /** Files exist but the marker is absent or not downloadable yet: a writer never finished, or iCloud is still fetching. */
+    public data object NotReady : RemoteProbe
+
+    public data class Unavailable(val reason: UnavailableReason) : RemoteProbe
+
+    public data class Failed(val error: CloudError) : RemoteProbe
 }
 
 public sealed interface SyncOutcome {
@@ -54,9 +86,3 @@ public sealed interface SyncOutcome {
     public data class Failed(val error: CloudError, val cause: Throwable) : SyncOutcome
 }
 
-/** What a fresh install sees remotely. [marker] is null when the remote set is absent or incomplete. */
-public class RemoteInspection(
-    public val availability: CloudAvailability,
-    public val files: List<RemoteFile>,
-    public val marker: ByteArray?,
-)

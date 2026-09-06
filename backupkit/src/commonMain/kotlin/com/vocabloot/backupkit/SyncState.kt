@@ -16,6 +16,8 @@ public data class SyncState(
     val entries: Map<String, SyncedEntry> = emptyMap(),
     val lastSuccessEpochMs: Long? = null,
     val lastEntryCount: Int = 0,
+    /** [WriteHold] name; a string so an unknown future value degrades to [WriteHold.None] on read. */
+    val hold: String = "None",
 )
 
 /** [hash] is sha256-hex for hash-compared entries, null for size-compared ones (identity = path + size). */
