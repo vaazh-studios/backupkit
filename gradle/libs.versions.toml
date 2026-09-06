@@ -8,6 +8,7 @@ ktor = "3.4.2"
 playServicesAuth = "22.0.0"
 mavenPublish = "0.37.0"
 bcv = "0.18.1"
+dokka = "2.1.0"
 composeMultiplatform = "1.10.3"
 androidActivity = "1.13.0"
 
@@ -31,3 +32,4 @@ jetbrains-compose = { id = "org.jetbrains.compose", version.ref = "composeMultip
 compose-compiler = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 maven-publish = { id = "com.vanniktech.maven.publish", version.ref = "mavenPublish" }
 bcv = { id = "org.jetbrains.kotlinx.binary-compatibility-validator", version.ref = "bcv" }
+dokka = { id = "org.jetbrains.dokka", version.ref = "dokka" }

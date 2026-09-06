@@ -9,6 +9,7 @@ app-data folder on Android. No server, no account on your side, no OAuth client 
 [![CI](https://github.com/vaazh-studios/backupkit/actions/workflows/ci.yml/badge.svg)](https://github.com/vaazh-studios/backupkit/actions/workflows/ci.yml)
 [![Kotlin](https://img.shields.io/badge/Kotlin-2.3.20-7F52FF?logo=kotlin&logoColor=white)](https://kotlinlang.org)
 [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
+[![API reference](https://img.shields.io/badge/API-reference-blue)](https://vaazh-studios.github.io/backupkit/)
 
 ## Features
 
@@ -108,6 +109,21 @@ compared by size, uploaded before the hashed entries, and never re-uploaded. Pas
 `SyncSnapshot(entries, isEmpty = notes.isEmpty())` so a fresh install with no data never overwrites
 an existing backup (the engine answers `RestorePending` instead).
 
+## How it works
+
+```mermaid
+flowchart LR
+    A[Your app data] -->|SyncSnapshot| E[SyncEngine]
+    E -->|writes, marker last| S[CloudStorage]
+    S --> I[(iCloud Drive container<br/>outside Documents)]
+    S --> G[(Google Drive<br/>appDataFolder)]
+    E <-->|SyncState| F[FileSyncStateStore]
+    style I fill:#eef6ff,stroke:#7aa7d9
+    style G fill:#eefbf0,stroke:#7fc28f
+```
+
+No server and no account of yours in the picture: the files sit in the user's own cloud, invisible to them in Files and Drive, readable only by your app. `SyncEngine` diffs the snapshot against the remote listing, uploads size-compared files, then hashed ones, then the marker, and saves state after every step so a killed process resumes where it stopped.
+
 ## Two layers
 
 | | Type | Use it when |
@@ -180,7 +196,7 @@ inspired Layer 2's "engine owns the state" shape.
 - [The SyncEngine contract](docs/contract.md): the ten guarantees and the error mapping
 - [Bring your own scheduler](docs/scheduling.md)
 - [Design](docs/design.md), [Publishing](docs/publishing.md) (maintainers)
-- API reference: KDoc on every public declaration; the ABI is tracked in [`backupkit/api`](backupkit/api).
+- [API reference](https://vaazh-studios.github.io/backupkit/) (Dokka); the ABI is tracked in [`backupkit/api`](backupkit/api).
 
 ## Dependencies
 
