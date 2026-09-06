@@ -1,5 +1,7 @@
 # BackupKit
 
+![BackupKit: your app backs up into the user's own Google Drive or iCloud Drive, no server](docs/assets/hero.png)
+
 Kotlin Multiplatform backup into the user's **own** cloud: iCloud Drive on iOS, the Google Drive
 app-data folder on Android. No server, no account on your side, no OAuth client setup on iOS.
 
