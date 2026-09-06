@@ -7,5 +7,5 @@ struct ComposeView: UIViewControllerRepresentable {
 }
 
 struct ContentView: View {
-    var body: some View { ComposeView().ignoresSafeArea(.keyboard) }
+    var body: some View { ComposeView().ignoresSafeArea() }
 }
