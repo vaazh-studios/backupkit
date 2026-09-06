@@ -165,6 +165,7 @@ public class RestoreEngine(
         var record = start
         val total = record.files.size
         onProgress(record.downloaded, total)
+        record = resolveRemoteIds(record)
         runCatching { storage.prefetch(record.pending.map { it.path }) }
             .onFailure { if (it is CancellationException) throw it }
 
@@ -207,6 +208,24 @@ public class RestoreEngine(
             return RestoreOutcome.Completed(record.downloaded)
         }
         return RestoreOutcome.Partial(downloaded = record.downloaded, pending = pending.map { it.path })
+    }
+
+    /**
+     * Drive resolves a path to a file id through a full listing; without ids every download would
+     * list again. One listing per run fills the ids the plan left out (iCloud ignores them).
+     */
+    private suspend fun resolveRemoteIds(record: RestoreRecord): RestoreRecord {
+        if (record.pending.none { it.remoteId == null }) return record
+        val ids = try {
+            storage.list().associate { it.path to it.remoteId }
+        } catch (t: Throwable) {
+            if (t is CancellationException) throw t
+            return record
+        }
+        if (ids.values.all { it == null }) return record
+        val resolved = record.copy(files = record.files.map { f -> if (f.remoteId == null) f.copy(remoteId = ids[f.path]) else f })
+        recordStore.save(resolved)
+        return resolved
     }
 
     private fun RestoreRecord.mark(path: String, transform: (RestoreFileRecord) -> RestoreFileRecord): RestoreRecord =

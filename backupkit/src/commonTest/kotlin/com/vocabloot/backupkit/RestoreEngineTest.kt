@@ -180,6 +180,22 @@ class RestoreEngineTest {
     }
 
     @Test
+    fun missing_remote_ids_are_resolved_with_one_listing() = runTest {
+        val h = Harness()
+        h.storage.assignsRemoteIds = true
+        h.storage.remote.clear()
+        h.storage.writeBytes("backup.json", "{\"count\":1}".encodeToByteArray(), "application/json")
+        h.storage.writeBytes("items/a.jpg", "a".encodeToByteArray(), "image/jpeg")
+        val plan = RestorePlan(h.source(), listOf(RestoreFile("backup.json", "/local/backup.json"), RestoreFile("items/a.jpg", "/local/a.jpg", required = false)))
+        h.storage.listCalls = 0
+
+        h.restore.start(plan)
+
+        assertEquals(1, h.storage.listCalls)
+        assertTrue(h.restore.record()!!.files.all { it.remoteId != null })
+    }
+
+    @Test
     fun a_duplicate_path_in_the_plan_is_rejected() = runTest {
         val h = Harness()
         val bad = RestorePlan(h.source(), listOf(RestoreFile("x", "/x"), RestoreFile("x", "/y")))

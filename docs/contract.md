@@ -29,11 +29,11 @@
 
 ## Probe
 
-`SyncEngine.probe()` never throws for cloud failures. In order: availability gate → `Unavailable`; listing failure → `Failed`; no files → `None`; files but no marker, or a marker that is not downloadable yet → `NotReady`; otherwise `Found(marker bytes, SourceRef, files)`. `SourceRef` pins identity key, marker remote id and marker fingerprint; `matches()` compares identity and fingerprint.
+`SyncEngine.probe()` never throws for cloud failures. In order: availability gate → `Unavailable`; listing failure → `Failed`; no files → `None`; files but no marker, or a marker that is not downloadable yet → `NotReady`; otherwise `Found(marker bytes, SourceRef, files)`. `SourceRef` pins identity key, marker remote id and marker fingerprint; `matches()` compares identity and fingerprint. Any write of the marker by another device therefore counts as a changed source, including a marker that only carries a newer timestamp; keep volatile fields out of the marker if you want a stricter notion of "same backup".
 
 ## Write hold
 
-`setHold(WriteHold)` persists into the sync state without touching entries. While the hold is not `None`, `sync()` returns `Unavailable(WriteHeld)` and writes nothing. An identity reset keeps the hold. The library never sets or clears the hold on its own.
+`setHold(WriteHold)` persists into the sync state without touching entries. While the hold is not `None`, `sync()` returns `Unavailable(WriteHeld)` and writes nothing; a hold set during a run stops that run before its next put or delete. `sync()` calls are serialised by a mutex inside the engine. An identity reset keeps the hold. The library never sets or clears the hold on its own.
 
 ## Restore
 

@@ -81,14 +81,16 @@ internal class DriveRestClient(
         return json.decodeFromString(DriveFile.serializer(), response.bodyAsText()).id
     }
 
-    suspend fun update(fileId: String, bytes: ByteArray, mimeType: String) {
-        call { token ->
+    /** False when [fileId] no longer exists (404): the caller should create instead. */
+    suspend fun update(fileId: String, bytes: ByteArray, mimeType: String): Boolean {
+        val response = call(okStatuses = setOf(HttpStatusCode.NotFound)) { token ->
             client.patch("$UPLOAD/files/$fileId") {
                 bearerAuth(token)
                 url { parameters.append("uploadType", "media") }
                 setBody(ByteArrayContent(bytes, ContentType.parse(mimeType)))
             }
         }
+        return response.status != HttpStatusCode.NotFound
     }
 
     suspend fun delete(fileId: String) {

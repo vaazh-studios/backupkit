@@ -118,6 +118,15 @@ class DriveRestClientTest {
     }
 
     @Test
+    fun update_reports_a_vanished_file_instead_of_throwing() = runTest {
+        val gone = client { respond("not found", HttpStatusCode.NotFound) }
+        assertEquals(false, gone.update(fileId = "old", bytes = "{}".encodeToByteArray(), mimeType = "application/json"))
+
+        val ok = client { respond("""{"id":"x"}""", HttpStatusCode.OK, jsonHeaders) }
+        assertEquals(true, ok.update(fileId = "x", bytes = "{}".encodeToByteArray(), mimeType = "application/json"))
+    }
+
+    @Test
     fun delete_treats_404_as_success() = runTest {
         val c = client { respond("gone", HttpStatusCode.NotFound) }
         c.delete(fileId = "missing")

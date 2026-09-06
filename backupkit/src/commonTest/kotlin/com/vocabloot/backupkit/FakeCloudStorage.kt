@@ -23,6 +23,7 @@ class FakeCloudStorage(
     val downloadLog = mutableListOf<String>()
 
     val putLog = mutableListOf<String>()
+    var onPut: (String) -> Unit = {}
     val deleteLog = mutableListOf<String>()
     var listCalls = 0
 
@@ -45,6 +46,7 @@ class FakeCloudStorage(
     override suspend fun writeBytes(path: String, bytes: ByteArray, mimeType: String, existingRemoteId: String?): String? {
         failPutsContaining?.let { if (path.contains(it)) throw CloudStorageException(failError, "put failed: $path") }
         putLog += path
+        onPut(path)
         // Drive semantics: a CREATE (path not present) mints a fresh id; an update keeps it.
         val created = !remote.containsKey(path)
         remote[path] = bytes

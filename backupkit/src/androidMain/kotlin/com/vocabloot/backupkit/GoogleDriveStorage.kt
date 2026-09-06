@@ -9,7 +9,8 @@ import kotlinx.coroutines.withContext
 
 /**
  * Google Drive app-data transport. Flat folder; paths are used verbatim as Drive file names.
- * Single uploads are capped at 5 MB (Drive's multipart limit).
+ * Single uploads are capped at 5 MB (Drive's multipart limit). [list] also removes duplicate
+ * files left by interrupted creates, keeping the newest by modified time.
  */
 public class GoogleDriveStorage(
     context: Context,
@@ -55,10 +56,10 @@ public class GoogleDriveStorage(
             if (bytes.size > MAX_SINGLE_UPLOAD_BYTES) {
                 throw CloudStorageException(CloudError.Transport, "$path is ${bytes.size} bytes; above the 5 MB single-upload limit")
             }
-            if (existingRemoteId != null) {
-                rest.update(fileId = existingRemoteId, bytes = bytes, mimeType = mimeType)
+            if (existingRemoteId != null && rest.update(fileId = existingRemoteId, bytes = bytes, mimeType = mimeType)) {
                 existingRemoteId
             } else {
+                // No id, or the id vanished (deleted remotely, dedupe): create a fresh file.
                 rest.create(name = path, bytes = bytes, mimeType = mimeType)
             }
         }

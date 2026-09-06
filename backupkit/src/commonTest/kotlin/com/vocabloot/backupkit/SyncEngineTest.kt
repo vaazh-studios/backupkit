@@ -365,6 +365,18 @@ class SyncEngineTest {
     }
 
     @Test
+    fun a_hold_set_mid_run_stops_the_run_before_the_next_put() = runTest {
+        val h = harness("a", "b")
+        h.storage.onPut = { path -> if (path == "items/a.png") h.engine().setHold(WriteHold.RestoreRunning) }
+
+        val outcome = h.run()
+
+        assertEquals(SyncOutcome.Unavailable(UnavailableReason.WriteHeld), outcome)
+        assertEquals(listOf("items/a.jpg", "items/a.png"), h.storage.putLog)
+        assertFalse(h.storage.remote.containsKey("backup.json"))
+    }
+
+    @Test
     fun identity_reset_keeps_the_hold() = runTest {
         val h = harness("a")
         h.run()

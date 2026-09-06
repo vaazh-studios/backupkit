@@ -1,6 +1,8 @@
 package com.vocabloot.backupkit
 
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlin.time.Clock
 import kotlin.time.ExperimentalTime
 
@@ -18,15 +20,21 @@ public class SyncEngine(
     private val clock: () -> Long = { Clock.System.now().toEpochMilliseconds() },
 ) {
 
-    /** Runs on the caller's dispatcher. Never throws for cloud failures; they come back as [SyncOutcome.Failed]. */
-    public suspend fun sync(snapshot: SyncSnapshot, onProgress: (done: Int, total: Int) -> Unit = { _, _ -> }): SyncOutcome {
+    private val mutex = Mutex()
+
+    /**
+     * Runs on the caller's dispatcher. Never throws for cloud failures; they come back as
+     * [SyncOutcome.Failed]. Concurrent calls are serialised: a second caller waits for the first run.
+     * A [WriteHold] set while a run is in progress stops it before its next put or delete.
+     */
+    public suspend fun sync(snapshot: SyncSnapshot, onProgress: (done: Int, total: Int) -> Unit = { _, _ -> }): SyncOutcome = mutex.withLock {
         when (storage.availability()) {
-            CloudAvailability.NoAccount -> return SyncOutcome.Unavailable(UnavailableReason.NoAccount)
-            CloudAvailability.NeedsConsent -> return SyncOutcome.Unavailable(UnavailableReason.NeedsConsent)
+            CloudAvailability.NoAccount -> return@withLock SyncOutcome.Unavailable(UnavailableReason.NoAccount)
+            CloudAvailability.NeedsConsent -> return@withLock SyncOutcome.Unavailable(UnavailableReason.NeedsConsent)
             CloudAvailability.Available -> Unit
         }
-        if (hold != WriteHold.None) return SyncOutcome.Unavailable(UnavailableReason.WriteHeld)
-        return try {
+        if (hold != WriteHold.None) return@withLock SyncOutcome.Unavailable(UnavailableReason.WriteHeld)
+        try {
             syncAvailable(snapshot, onProgress)
         } catch (t: Throwable) {
             if (t is CancellationException) throw t
@@ -123,6 +131,7 @@ public class SyncEngine(
         // 3) Uploads: size-compared first, hashed in snapshot order, marker last.
         val uploads = sizeUploads + hashedUploads + listOfNotNull(marker.takeIf { markerNeeded })
         for (d in uploads) {
+            if (hold != WriteHold.None) return SyncOutcome.Unavailable(UnavailableReason.WriteHeld)
             val existingId = state.entries[d.path]?.remoteId
             val mime = policy.mimeTypeOf(d.path)
             val remoteId = when (val source = d.source) {
@@ -136,28 +145,34 @@ public class SyncEngine(
                 // Adopt it now so the NEXT run does not mistake our own fresh marker for an account switch.
                 (remoteId ?: existingId)?.let { state = state.copy(identityKey = it) }
             }
-            stateStore.save(state)
+            persist(state)
             done += 1
             onProgress(done, total)
         }
 
         // 4) Deletes after uploads; a failed delete is logged and retried next run.
         for (path in deletes) {
+            if (hold != WriteHold.None) return SyncOutcome.Unavailable(UnavailableReason.WriteHeld)
             val ok = runCatching { storage.delete(path = path, remoteId = state.entries[path]?.remoteId) }
                 .onFailure { logW(TAG, it) { "delete failed for $path (will retry next run)" } }
                 .isSuccess
             if (ok) {
                 state = state.copy(entries = state.entries - path)
-                stateStore.save(state)
+                persist(state)
             }
             done += 1
             onProgress(done, total)
         }
 
         state = state.copy(lastSuccessEpochMs = clock(), lastEntryCount = present.size)
-        stateStore.save(state)
+        persist(state)
         logI(TAG) { "sync ok entries=${present.size} uploads=${uploads.size} deletes=${deletes.size}" }
         return SyncOutcome.Synced(entryCount = present.size)
+    }
+
+    /** Saves [state] while keeping whatever [WriteHold] was persisted meanwhile: the hold is owned by the app, not by a run. */
+    private fun persist(state: SyncState) {
+        stateStore.save(state.copy(hold = stateStore.load().hold))
     }
 
     private companion object {
