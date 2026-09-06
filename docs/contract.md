@@ -26,3 +26,19 @@
 | Container unavailable, Play Services failure | `NotAvailable` |
 | Consent dialog not accepted | `NeedsConsent` |
 | Everything else (5xx after retries, coordination failure, timeout) | `Transport` |
+
+## Probe
+
+`SyncEngine.probe()` never throws for cloud failures. In order: availability gate → `Unavailable`; listing failure → `Failed`; no files → `None`; files but no marker, or a marker that is not downloadable yet → `NotReady`; otherwise `Found(marker bytes, SourceRef, files)`. `SourceRef` pins identity key, marker remote id and marker fingerprint; `matches()` compares identity and fingerprint.
+
+## Write hold
+
+`setHold(WriteHold)` persists into the sync state without touching entries. While the hold is not `None`, `sync()` returns `Unavailable(WriteHeld)` and writes nothing. An identity reset keeps the hold. The library never sets or clears the hold on its own.
+
+## Restore
+
+1. `start(plan)` records the plan (pinned `SourceRef`, files with a `required` flag) and runs; `prefetch` is asked for every pending path first.
+2. Required files download in plan order. The first failure ends the run as `Failed(error)`; optional files are untouched. Files already downloaded stay downloaded.
+3. Optional files download best-effort; a failure increments that file's attempts, and a file with `maxAttempts` (3) failures is skipped in later runs.
+4. The record is saved after every file. `Completed` when nothing is pending (stamped with completion time), else `Partial(pending)`.
+5. `resume()` revalidates first: `Found` whose source matches → continue from the record; otherwise `SourceChanged`, `SourceUnavailable`, `NotReady`, `NotAvailable`, `NeedsConsent`, or the mapped transport error. Done files are never downloaded again.

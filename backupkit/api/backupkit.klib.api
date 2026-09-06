@@ -45,16 +45,47 @@ final enum class com.vocabloot.backupkit/LogLevel : kotlin/Enum<com.vocabloot.ba
     final fun values(): kotlin/Array<com.vocabloot.backupkit/LogLevel> // com.vocabloot.backupkit/LogLevel.values|values#static(){}[0]
 }
 
+final enum class com.vocabloot.backupkit/RestoreError : kotlin/Enum<com.vocabloot.backupkit/RestoreError> { // com.vocabloot.backupkit/RestoreError|null[0]
+    enum entry AuthRevoked // com.vocabloot.backupkit/RestoreError.AuthRevoked|null[0]
+    enum entry NeedsConsent // com.vocabloot.backupkit/RestoreError.NeedsConsent|null[0]
+    enum entry NotAvailable // com.vocabloot.backupkit/RestoreError.NotAvailable|null[0]
+    enum entry NotReady // com.vocabloot.backupkit/RestoreError.NotReady|null[0]
+    enum entry Offline // com.vocabloot.backupkit/RestoreError.Offline|null[0]
+    enum entry SourceChanged // com.vocabloot.backupkit/RestoreError.SourceChanged|null[0]
+    enum entry SourceUnavailable // com.vocabloot.backupkit/RestoreError.SourceUnavailable|null[0]
+    enum entry StorageFull // com.vocabloot.backupkit/RestoreError.StorageFull|null[0]
+    enum entry Transport // com.vocabloot.backupkit/RestoreError.Transport|null[0]
+
+    final val entries // com.vocabloot.backupkit/RestoreError.entries|#static{}entries[0]
+        final fun <get-entries>(): kotlin.enums/EnumEntries<com.vocabloot.backupkit/RestoreError> // com.vocabloot.backupkit/RestoreError.entries.<get-entries>|<get-entries>#static(){}[0]
+
+    final fun valueOf(kotlin/String): com.vocabloot.backupkit/RestoreError // com.vocabloot.backupkit/RestoreError.valueOf|valueOf#static(kotlin.String){}[0]
+    final fun values(): kotlin/Array<com.vocabloot.backupkit/RestoreError> // com.vocabloot.backupkit/RestoreError.values|values#static(){}[0]
+}
+
 final enum class com.vocabloot.backupkit/UnavailableReason : kotlin/Enum<com.vocabloot.backupkit/UnavailableReason> { // com.vocabloot.backupkit/UnavailableReason|null[0]
     enum entry NeedsConsent // com.vocabloot.backupkit/UnavailableReason.NeedsConsent|null[0]
     enum entry NoAccount // com.vocabloot.backupkit/UnavailableReason.NoAccount|null[0]
     enum entry RestorePending // com.vocabloot.backupkit/UnavailableReason.RestorePending|null[0]
+    enum entry WriteHeld // com.vocabloot.backupkit/UnavailableReason.WriteHeld|null[0]
 
     final val entries // com.vocabloot.backupkit/UnavailableReason.entries|#static{}entries[0]
         final fun <get-entries>(): kotlin.enums/EnumEntries<com.vocabloot.backupkit/UnavailableReason> // com.vocabloot.backupkit/UnavailableReason.entries.<get-entries>|<get-entries>#static(){}[0]
 
     final fun valueOf(kotlin/String): com.vocabloot.backupkit/UnavailableReason // com.vocabloot.backupkit/UnavailableReason.valueOf|valueOf#static(kotlin.String){}[0]
     final fun values(): kotlin/Array<com.vocabloot.backupkit/UnavailableReason> // com.vocabloot.backupkit/UnavailableReason.values|values#static(){}[0]
+}
+
+final enum class com.vocabloot.backupkit/WriteHold : kotlin/Enum<com.vocabloot.backupkit/WriteHold> { // com.vocabloot.backupkit/WriteHold|null[0]
+    enum entry None // com.vocabloot.backupkit/WriteHold.None|null[0]
+    enum entry RestoreIncomplete // com.vocabloot.backupkit/WriteHold.RestoreIncomplete|null[0]
+    enum entry RestoreRunning // com.vocabloot.backupkit/WriteHold.RestoreRunning|null[0]
+
+    final val entries // com.vocabloot.backupkit/WriteHold.entries|#static{}entries[0]
+        final fun <get-entries>(): kotlin.enums/EnumEntries<com.vocabloot.backupkit/WriteHold> // com.vocabloot.backupkit/WriteHold.entries.<get-entries>|<get-entries>#static(){}[0]
+
+    final fun valueOf(kotlin/String): com.vocabloot.backupkit/WriteHold // com.vocabloot.backupkit/WriteHold.valueOf|valueOf#static(kotlin.String){}[0]
+    final fun values(): kotlin/Array<com.vocabloot.backupkit/WriteHold> // com.vocabloot.backupkit/WriteHold.values|values#static(){}[0]
 }
 
 abstract fun interface com.vocabloot.backupkit/BackupKitLogger { // com.vocabloot.backupkit/BackupKitLogger|null[0]
@@ -74,6 +105,13 @@ abstract interface com.vocabloot.backupkit/CloudStorage { // com.vocabloot.backu
     abstract suspend fun readBytes(kotlin/String, kotlin/String? = ...): kotlin/ByteArray? // com.vocabloot.backupkit/CloudStorage.readBytes|readBytes(kotlin.String;kotlin.String?){}[0]
     abstract suspend fun writeBytes(kotlin/String, kotlin/ByteArray, kotlin/String, kotlin/String? = ...): kotlin/String? // com.vocabloot.backupkit/CloudStorage.writeBytes|writeBytes(kotlin.String;kotlin.ByteArray;kotlin.String;kotlin.String?){}[0]
     abstract suspend fun writeFile(kotlin/String, kotlin/String, kotlin/String, kotlin/String? = ...): kotlin/String? // com.vocabloot.backupkit/CloudStorage.writeFile|writeFile(kotlin.String;kotlin.String;kotlin.String;kotlin.String?){}[0]
+    open suspend fun prefetch(kotlin.collections/List<kotlin/String>) // com.vocabloot.backupkit/CloudStorage.prefetch|prefetch(kotlin.collections.List<kotlin.String>){}[0]
+}
+
+abstract interface com.vocabloot.backupkit/RestoreRecordStore { // com.vocabloot.backupkit/RestoreRecordStore|null[0]
+    abstract fun clear() // com.vocabloot.backupkit/RestoreRecordStore.clear|clear(){}[0]
+    abstract fun load(): com.vocabloot.backupkit/RestoreRecord? // com.vocabloot.backupkit/RestoreRecordStore.load|load(){}[0]
+    abstract fun save(com.vocabloot.backupkit/RestoreRecord) // com.vocabloot.backupkit/RestoreRecordStore.save|save(com.vocabloot.backupkit.RestoreRecord){}[0]
 }
 
 abstract interface com.vocabloot.backupkit/SyncStateStore { // com.vocabloot.backupkit/SyncStateStore|null[0]
@@ -99,6 +137,104 @@ sealed interface com.vocabloot.backupkit/CloudAvailability { // com.vocabloot.ba
         final fun equals(kotlin/Any?): kotlin/Boolean // com.vocabloot.backupkit/CloudAvailability.NoAccount.equals|equals(kotlin.Any?){}[0]
         final fun hashCode(): kotlin/Int // com.vocabloot.backupkit/CloudAvailability.NoAccount.hashCode|hashCode(){}[0]
         final fun toString(): kotlin/String // com.vocabloot.backupkit/CloudAvailability.NoAccount.toString|toString(){}[0]
+    }
+}
+
+sealed interface com.vocabloot.backupkit/RemoteProbe { // com.vocabloot.backupkit/RemoteProbe|null[0]
+    final class Failed : com.vocabloot.backupkit/RemoteProbe { // com.vocabloot.backupkit/RemoteProbe.Failed|null[0]
+        constructor <init>(com.vocabloot.backupkit/CloudError) // com.vocabloot.backupkit/RemoteProbe.Failed.<init>|<init>(com.vocabloot.backupkit.CloudError){}[0]
+
+        final val error // com.vocabloot.backupkit/RemoteProbe.Failed.error|{}error[0]
+            final fun <get-error>(): com.vocabloot.backupkit/CloudError // com.vocabloot.backupkit/RemoteProbe.Failed.error.<get-error>|<get-error>(){}[0]
+
+        final fun component1(): com.vocabloot.backupkit/CloudError // com.vocabloot.backupkit/RemoteProbe.Failed.component1|component1(){}[0]
+        final fun copy(com.vocabloot.backupkit/CloudError = ...): com.vocabloot.backupkit/RemoteProbe.Failed // com.vocabloot.backupkit/RemoteProbe.Failed.copy|copy(com.vocabloot.backupkit.CloudError){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // com.vocabloot.backupkit/RemoteProbe.Failed.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // com.vocabloot.backupkit/RemoteProbe.Failed.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // com.vocabloot.backupkit/RemoteProbe.Failed.toString|toString(){}[0]
+    }
+
+    final class Found : com.vocabloot.backupkit/RemoteProbe { // com.vocabloot.backupkit/RemoteProbe.Found|null[0]
+        constructor <init>(kotlin/ByteArray, com.vocabloot.backupkit/SourceRef, kotlin.collections/List<com.vocabloot.backupkit/RemoteFile>) // com.vocabloot.backupkit/RemoteProbe.Found.<init>|<init>(kotlin.ByteArray;com.vocabloot.backupkit.SourceRef;kotlin.collections.List<com.vocabloot.backupkit.RemoteFile>){}[0]
+
+        final val files // com.vocabloot.backupkit/RemoteProbe.Found.files|{}files[0]
+            final fun <get-files>(): kotlin.collections/List<com.vocabloot.backupkit/RemoteFile> // com.vocabloot.backupkit/RemoteProbe.Found.files.<get-files>|<get-files>(){}[0]
+        final val marker // com.vocabloot.backupkit/RemoteProbe.Found.marker|{}marker[0]
+            final fun <get-marker>(): kotlin/ByteArray // com.vocabloot.backupkit/RemoteProbe.Found.marker.<get-marker>|<get-marker>(){}[0]
+        final val source // com.vocabloot.backupkit/RemoteProbe.Found.source|{}source[0]
+            final fun <get-source>(): com.vocabloot.backupkit/SourceRef // com.vocabloot.backupkit/RemoteProbe.Found.source.<get-source>|<get-source>(){}[0]
+    }
+
+    final class Unavailable : com.vocabloot.backupkit/RemoteProbe { // com.vocabloot.backupkit/RemoteProbe.Unavailable|null[0]
+        constructor <init>(com.vocabloot.backupkit/UnavailableReason) // com.vocabloot.backupkit/RemoteProbe.Unavailable.<init>|<init>(com.vocabloot.backupkit.UnavailableReason){}[0]
+
+        final val reason // com.vocabloot.backupkit/RemoteProbe.Unavailable.reason|{}reason[0]
+            final fun <get-reason>(): com.vocabloot.backupkit/UnavailableReason // com.vocabloot.backupkit/RemoteProbe.Unavailable.reason.<get-reason>|<get-reason>(){}[0]
+
+        final fun component1(): com.vocabloot.backupkit/UnavailableReason // com.vocabloot.backupkit/RemoteProbe.Unavailable.component1|component1(){}[0]
+        final fun copy(com.vocabloot.backupkit/UnavailableReason = ...): com.vocabloot.backupkit/RemoteProbe.Unavailable // com.vocabloot.backupkit/RemoteProbe.Unavailable.copy|copy(com.vocabloot.backupkit.UnavailableReason){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // com.vocabloot.backupkit/RemoteProbe.Unavailable.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // com.vocabloot.backupkit/RemoteProbe.Unavailable.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // com.vocabloot.backupkit/RemoteProbe.Unavailable.toString|toString(){}[0]
+    }
+
+    final object None : com.vocabloot.backupkit/RemoteProbe { // com.vocabloot.backupkit/RemoteProbe.None|null[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // com.vocabloot.backupkit/RemoteProbe.None.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // com.vocabloot.backupkit/RemoteProbe.None.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // com.vocabloot.backupkit/RemoteProbe.None.toString|toString(){}[0]
+    }
+
+    final object NotReady : com.vocabloot.backupkit/RemoteProbe { // com.vocabloot.backupkit/RemoteProbe.NotReady|null[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // com.vocabloot.backupkit/RemoteProbe.NotReady.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // com.vocabloot.backupkit/RemoteProbe.NotReady.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // com.vocabloot.backupkit/RemoteProbe.NotReady.toString|toString(){}[0]
+    }
+}
+
+sealed interface com.vocabloot.backupkit/RestoreOutcome { // com.vocabloot.backupkit/RestoreOutcome|null[0]
+    final class Completed : com.vocabloot.backupkit/RestoreOutcome { // com.vocabloot.backupkit/RestoreOutcome.Completed|null[0]
+        constructor <init>(kotlin/Int) // com.vocabloot.backupkit/RestoreOutcome.Completed.<init>|<init>(kotlin.Int){}[0]
+
+        final val downloaded // com.vocabloot.backupkit/RestoreOutcome.Completed.downloaded|{}downloaded[0]
+            final fun <get-downloaded>(): kotlin/Int // com.vocabloot.backupkit/RestoreOutcome.Completed.downloaded.<get-downloaded>|<get-downloaded>(){}[0]
+
+        final fun component1(): kotlin/Int // com.vocabloot.backupkit/RestoreOutcome.Completed.component1|component1(){}[0]
+        final fun copy(kotlin/Int = ...): com.vocabloot.backupkit/RestoreOutcome.Completed // com.vocabloot.backupkit/RestoreOutcome.Completed.copy|copy(kotlin.Int){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // com.vocabloot.backupkit/RestoreOutcome.Completed.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // com.vocabloot.backupkit/RestoreOutcome.Completed.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // com.vocabloot.backupkit/RestoreOutcome.Completed.toString|toString(){}[0]
+    }
+
+    final class Failed : com.vocabloot.backupkit/RestoreOutcome { // com.vocabloot.backupkit/RestoreOutcome.Failed|null[0]
+        constructor <init>(com.vocabloot.backupkit/RestoreError, kotlin/Int) // com.vocabloot.backupkit/RestoreOutcome.Failed.<init>|<init>(com.vocabloot.backupkit.RestoreError;kotlin.Int){}[0]
+
+        final val downloaded // com.vocabloot.backupkit/RestoreOutcome.Failed.downloaded|{}downloaded[0]
+            final fun <get-downloaded>(): kotlin/Int // com.vocabloot.backupkit/RestoreOutcome.Failed.downloaded.<get-downloaded>|<get-downloaded>(){}[0]
+        final val error // com.vocabloot.backupkit/RestoreOutcome.Failed.error|{}error[0]
+            final fun <get-error>(): com.vocabloot.backupkit/RestoreError // com.vocabloot.backupkit/RestoreOutcome.Failed.error.<get-error>|<get-error>(){}[0]
+
+        final fun component1(): com.vocabloot.backupkit/RestoreError // com.vocabloot.backupkit/RestoreOutcome.Failed.component1|component1(){}[0]
+        final fun component2(): kotlin/Int // com.vocabloot.backupkit/RestoreOutcome.Failed.component2|component2(){}[0]
+        final fun copy(com.vocabloot.backupkit/RestoreError = ..., kotlin/Int = ...): com.vocabloot.backupkit/RestoreOutcome.Failed // com.vocabloot.backupkit/RestoreOutcome.Failed.copy|copy(com.vocabloot.backupkit.RestoreError;kotlin.Int){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // com.vocabloot.backupkit/RestoreOutcome.Failed.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // com.vocabloot.backupkit/RestoreOutcome.Failed.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // com.vocabloot.backupkit/RestoreOutcome.Failed.toString|toString(){}[0]
+    }
+
+    final class Partial : com.vocabloot.backupkit/RestoreOutcome { // com.vocabloot.backupkit/RestoreOutcome.Partial|null[0]
+        constructor <init>(kotlin/Int, kotlin.collections/List<kotlin/String>) // com.vocabloot.backupkit/RestoreOutcome.Partial.<init>|<init>(kotlin.Int;kotlin.collections.List<kotlin.String>){}[0]
+
+        final val downloaded // com.vocabloot.backupkit/RestoreOutcome.Partial.downloaded|{}downloaded[0]
+            final fun <get-downloaded>(): kotlin/Int // com.vocabloot.backupkit/RestoreOutcome.Partial.downloaded.<get-downloaded>|<get-downloaded>(){}[0]
+        final val pending // com.vocabloot.backupkit/RestoreOutcome.Partial.pending|{}pending[0]
+            final fun <get-pending>(): kotlin.collections/List<kotlin/String> // com.vocabloot.backupkit/RestoreOutcome.Partial.pending.<get-pending>|<get-pending>(){}[0]
+
+        final fun component1(): kotlin/Int // com.vocabloot.backupkit/RestoreOutcome.Partial.component1|component1(){}[0]
+        final fun component2(): kotlin.collections/List<kotlin/String> // com.vocabloot.backupkit/RestoreOutcome.Partial.component2|component2(){}[0]
+        final fun copy(kotlin/Int = ..., kotlin.collections/List<kotlin/String> = ...): com.vocabloot.backupkit/RestoreOutcome.Partial // com.vocabloot.backupkit/RestoreOutcome.Partial.copy|copy(kotlin.Int;kotlin.collections.List<kotlin.String>){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // com.vocabloot.backupkit/RestoreOutcome.Partial.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // com.vocabloot.backupkit/RestoreOutcome.Partial.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // com.vocabloot.backupkit/RestoreOutcome.Partial.toString|toString(){}[0]
     }
 }
 
@@ -181,6 +317,14 @@ final class com.vocabloot.backupkit/CloudStorageException : kotlin/Exception { /
         final fun <get-error>(): com.vocabloot.backupkit/CloudError // com.vocabloot.backupkit/CloudStorageException.error.<get-error>|<get-error>(){}[0]
 }
 
+final class com.vocabloot.backupkit/FileRestoreRecordStore : com.vocabloot.backupkit/RestoreRecordStore { // com.vocabloot.backupkit/FileRestoreRecordStore|null[0]
+    constructor <init>(kotlin/String) // com.vocabloot.backupkit/FileRestoreRecordStore.<init>|<init>(kotlin.String){}[0]
+
+    final fun clear() // com.vocabloot.backupkit/FileRestoreRecordStore.clear|clear(){}[0]
+    final fun load(): com.vocabloot.backupkit/RestoreRecord? // com.vocabloot.backupkit/FileRestoreRecordStore.load|load(){}[0]
+    final fun save(com.vocabloot.backupkit/RestoreRecord) // com.vocabloot.backupkit/FileRestoreRecordStore.save|save(com.vocabloot.backupkit.RestoreRecord){}[0]
+}
+
 final class com.vocabloot.backupkit/FileSyncStateStore : com.vocabloot.backupkit/SyncStateStore { // com.vocabloot.backupkit/FileSyncStateStore|null[0]
     constructor <init>(kotlin/String) // com.vocabloot.backupkit/FileSyncStateStore.<init>|<init>(kotlin.String){}[0]
 
@@ -201,6 +345,7 @@ final class com.vocabloot.backupkit/ICloudStorage : com.vocabloot.backupkit/Clou
     final suspend fun exists(kotlin/String): kotlin/Boolean // com.vocabloot.backupkit/ICloudStorage.exists|exists(kotlin.String){}[0]
     final suspend fun identityKey(): kotlin/String? // com.vocabloot.backupkit/ICloudStorage.identityKey|identityKey(){}[0]
     final suspend fun list(): kotlin.collections/List<com.vocabloot.backupkit/RemoteFile> // com.vocabloot.backupkit/ICloudStorage.list|list(){}[0]
+    final suspend fun prefetch(kotlin.collections/List<kotlin/String>) // com.vocabloot.backupkit/ICloudStorage.prefetch|prefetch(kotlin.collections.List<kotlin.String>){}[0]
     final suspend fun readBytes(kotlin/String, kotlin/String?): kotlin/ByteArray? // com.vocabloot.backupkit/ICloudStorage.readBytes|readBytes(kotlin.String;kotlin.String?){}[0]
     final suspend fun writeBytes(kotlin/String, kotlin/ByteArray, kotlin/String, kotlin/String?): kotlin/String? // com.vocabloot.backupkit/ICloudStorage.writeBytes|writeBytes(kotlin.String;kotlin.ByteArray;kotlin.String;kotlin.String?){}[0]
     final suspend fun writeFile(kotlin/String, kotlin/String, kotlin/String, kotlin/String?): kotlin/String? // com.vocabloot.backupkit/ICloudStorage.writeFile|writeFile(kotlin.String;kotlin.String;kotlin.String;kotlin.String?){}[0]
@@ -225,21 +370,172 @@ final class com.vocabloot.backupkit/RemoteFile { // com.vocabloot.backupkit/Remo
     final fun toString(): kotlin/String // com.vocabloot.backupkit/RemoteFile.toString|toString(){}[0]
 }
 
-final class com.vocabloot.backupkit/RemoteInspection { // com.vocabloot.backupkit/RemoteInspection|null[0]
-    constructor <init>(com.vocabloot.backupkit/CloudAvailability, kotlin.collections/List<com.vocabloot.backupkit/RemoteFile>, kotlin/ByteArray?) // com.vocabloot.backupkit/RemoteInspection.<init>|<init>(com.vocabloot.backupkit.CloudAvailability;kotlin.collections.List<com.vocabloot.backupkit.RemoteFile>;kotlin.ByteArray?){}[0]
+final class com.vocabloot.backupkit/RestoreEngine { // com.vocabloot.backupkit/RestoreEngine|null[0]
+    constructor <init>(com.vocabloot.backupkit/SyncEngine, com.vocabloot.backupkit/CloudStorage, com.vocabloot.backupkit/RestoreRecordStore, kotlin/Function0<kotlin/Long> = ..., kotlin/Int = ..., kotlin/Function0<kotlin/String> = ...) // com.vocabloot.backupkit/RestoreEngine.<init>|<init>(com.vocabloot.backupkit.SyncEngine;com.vocabloot.backupkit.CloudStorage;com.vocabloot.backupkit.RestoreRecordStore;kotlin.Function0<kotlin.Long>;kotlin.Int;kotlin.Function0<kotlin.String>){}[0]
 
-    final val availability // com.vocabloot.backupkit/RemoteInspection.availability|{}availability[0]
-        final fun <get-availability>(): com.vocabloot.backupkit/CloudAvailability // com.vocabloot.backupkit/RemoteInspection.availability.<get-availability>|<get-availability>(){}[0]
-    final val files // com.vocabloot.backupkit/RemoteInspection.files|{}files[0]
-        final fun <get-files>(): kotlin.collections/List<com.vocabloot.backupkit/RemoteFile> // com.vocabloot.backupkit/RemoteInspection.files.<get-files>|<get-files>(){}[0]
-    final val marker // com.vocabloot.backupkit/RemoteInspection.marker|{}marker[0]
-        final fun <get-marker>(): kotlin/ByteArray? // com.vocabloot.backupkit/RemoteInspection.marker.<get-marker>|<get-marker>(){}[0]
+    final fun clear() // com.vocabloot.backupkit/RestoreEngine.clear|clear(){}[0]
+    final fun record(): com.vocabloot.backupkit/RestoreRecord? // com.vocabloot.backupkit/RestoreEngine.record|record(){}[0]
+    final suspend fun resume(kotlin/Function2<kotlin/Int, kotlin/Int, kotlin/Unit> = ...): com.vocabloot.backupkit/RestoreOutcome // com.vocabloot.backupkit/RestoreEngine.resume|resume(kotlin.Function2<kotlin.Int,kotlin.Int,kotlin.Unit>){}[0]
+    final suspend fun start(com.vocabloot.backupkit/RestorePlan, kotlin/Function2<kotlin/Int, kotlin/Int, kotlin/Unit> = ...): com.vocabloot.backupkit/RestoreOutcome // com.vocabloot.backupkit/RestoreEngine.start|start(com.vocabloot.backupkit.RestorePlan;kotlin.Function2<kotlin.Int,kotlin.Int,kotlin.Unit>){}[0]
+}
+
+final class com.vocabloot.backupkit/RestoreFile { // com.vocabloot.backupkit/RestoreFile|null[0]
+    constructor <init>(kotlin/String, kotlin/String, kotlin/String? = ..., kotlin/Boolean = ...) // com.vocabloot.backupkit/RestoreFile.<init>|<init>(kotlin.String;kotlin.String;kotlin.String?;kotlin.Boolean){}[0]
+
+    final val path // com.vocabloot.backupkit/RestoreFile.path|{}path[0]
+        final fun <get-path>(): kotlin/String // com.vocabloot.backupkit/RestoreFile.path.<get-path>|<get-path>(){}[0]
+    final val remoteId // com.vocabloot.backupkit/RestoreFile.remoteId|{}remoteId[0]
+        final fun <get-remoteId>(): kotlin/String? // com.vocabloot.backupkit/RestoreFile.remoteId.<get-remoteId>|<get-remoteId>(){}[0]
+    final val required // com.vocabloot.backupkit/RestoreFile.required|{}required[0]
+        final fun <get-required>(): kotlin/Boolean // com.vocabloot.backupkit/RestoreFile.required.<get-required>|<get-required>(){}[0]
+    final val toLocalPath // com.vocabloot.backupkit/RestoreFile.toLocalPath|{}toLocalPath[0]
+        final fun <get-toLocalPath>(): kotlin/String // com.vocabloot.backupkit/RestoreFile.toLocalPath.<get-toLocalPath>|<get-toLocalPath>(){}[0]
+
+    final fun component1(): kotlin/String // com.vocabloot.backupkit/RestoreFile.component1|component1(){}[0]
+    final fun component2(): kotlin/String // com.vocabloot.backupkit/RestoreFile.component2|component2(){}[0]
+    final fun component3(): kotlin/String? // com.vocabloot.backupkit/RestoreFile.component3|component3(){}[0]
+    final fun component4(): kotlin/Boolean // com.vocabloot.backupkit/RestoreFile.component4|component4(){}[0]
+    final fun copy(kotlin/String = ..., kotlin/String = ..., kotlin/String? = ..., kotlin/Boolean = ...): com.vocabloot.backupkit/RestoreFile // com.vocabloot.backupkit/RestoreFile.copy|copy(kotlin.String;kotlin.String;kotlin.String?;kotlin.Boolean){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // com.vocabloot.backupkit/RestoreFile.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // com.vocabloot.backupkit/RestoreFile.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // com.vocabloot.backupkit/RestoreFile.toString|toString(){}[0]
+}
+
+final class com.vocabloot.backupkit/RestoreFileRecord { // com.vocabloot.backupkit/RestoreFileRecord|null[0]
+    constructor <init>(kotlin/String, kotlin/String, kotlin/String? = ..., kotlin/Boolean = ..., kotlin/Boolean = ..., kotlin/Int = ...) // com.vocabloot.backupkit/RestoreFileRecord.<init>|<init>(kotlin.String;kotlin.String;kotlin.String?;kotlin.Boolean;kotlin.Boolean;kotlin.Int){}[0]
+
+    final val attempts // com.vocabloot.backupkit/RestoreFileRecord.attempts|{}attempts[0]
+        final fun <get-attempts>(): kotlin/Int // com.vocabloot.backupkit/RestoreFileRecord.attempts.<get-attempts>|<get-attempts>(){}[0]
+    final val done // com.vocabloot.backupkit/RestoreFileRecord.done|{}done[0]
+        final fun <get-done>(): kotlin/Boolean // com.vocabloot.backupkit/RestoreFileRecord.done.<get-done>|<get-done>(){}[0]
+    final val path // com.vocabloot.backupkit/RestoreFileRecord.path|{}path[0]
+        final fun <get-path>(): kotlin/String // com.vocabloot.backupkit/RestoreFileRecord.path.<get-path>|<get-path>(){}[0]
+    final val remoteId // com.vocabloot.backupkit/RestoreFileRecord.remoteId|{}remoteId[0]
+        final fun <get-remoteId>(): kotlin/String? // com.vocabloot.backupkit/RestoreFileRecord.remoteId.<get-remoteId>|<get-remoteId>(){}[0]
+    final val required // com.vocabloot.backupkit/RestoreFileRecord.required|{}required[0]
+        final fun <get-required>(): kotlin/Boolean // com.vocabloot.backupkit/RestoreFileRecord.required.<get-required>|<get-required>(){}[0]
+    final val toLocalPath // com.vocabloot.backupkit/RestoreFileRecord.toLocalPath|{}toLocalPath[0]
+        final fun <get-toLocalPath>(): kotlin/String // com.vocabloot.backupkit/RestoreFileRecord.toLocalPath.<get-toLocalPath>|<get-toLocalPath>(){}[0]
+
+    final fun component1(): kotlin/String // com.vocabloot.backupkit/RestoreFileRecord.component1|component1(){}[0]
+    final fun component2(): kotlin/String // com.vocabloot.backupkit/RestoreFileRecord.component2|component2(){}[0]
+    final fun component3(): kotlin/String? // com.vocabloot.backupkit/RestoreFileRecord.component3|component3(){}[0]
+    final fun component4(): kotlin/Boolean // com.vocabloot.backupkit/RestoreFileRecord.component4|component4(){}[0]
+    final fun component5(): kotlin/Boolean // com.vocabloot.backupkit/RestoreFileRecord.component5|component5(){}[0]
+    final fun component6(): kotlin/Int // com.vocabloot.backupkit/RestoreFileRecord.component6|component6(){}[0]
+    final fun copy(kotlin/String = ..., kotlin/String = ..., kotlin/String? = ..., kotlin/Boolean = ..., kotlin/Boolean = ..., kotlin/Int = ...): com.vocabloot.backupkit/RestoreFileRecord // com.vocabloot.backupkit/RestoreFileRecord.copy|copy(kotlin.String;kotlin.String;kotlin.String?;kotlin.Boolean;kotlin.Boolean;kotlin.Int){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // com.vocabloot.backupkit/RestoreFileRecord.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // com.vocabloot.backupkit/RestoreFileRecord.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // com.vocabloot.backupkit/RestoreFileRecord.toString|toString(){}[0]
+
+    final object $serializer : kotlinx.serialization.internal/GeneratedSerializer<com.vocabloot.backupkit/RestoreFileRecord> { // com.vocabloot.backupkit/RestoreFileRecord.$serializer|null[0]
+        final val descriptor // com.vocabloot.backupkit/RestoreFileRecord.$serializer.descriptor|{}descriptor[0]
+            final fun <get-descriptor>(): kotlinx.serialization.descriptors/SerialDescriptor // com.vocabloot.backupkit/RestoreFileRecord.$serializer.descriptor.<get-descriptor>|<get-descriptor>(){}[0]
+
+        final fun childSerializers(): kotlin/Array<kotlinx.serialization/KSerializer<*>> // com.vocabloot.backupkit/RestoreFileRecord.$serializer.childSerializers|childSerializers(){}[0]
+        final fun deserialize(kotlinx.serialization.encoding/Decoder): com.vocabloot.backupkit/RestoreFileRecord // com.vocabloot.backupkit/RestoreFileRecord.$serializer.deserialize|deserialize(kotlinx.serialization.encoding.Decoder){}[0]
+        final fun serialize(kotlinx.serialization.encoding/Encoder, com.vocabloot.backupkit/RestoreFileRecord) // com.vocabloot.backupkit/RestoreFileRecord.$serializer.serialize|serialize(kotlinx.serialization.encoding.Encoder;com.vocabloot.backupkit.RestoreFileRecord){}[0]
+    }
+
+    final object Companion { // com.vocabloot.backupkit/RestoreFileRecord.Companion|null[0]
+        final fun serializer(): kotlinx.serialization/KSerializer<com.vocabloot.backupkit/RestoreFileRecord> // com.vocabloot.backupkit/RestoreFileRecord.Companion.serializer|serializer(){}[0]
+    }
+}
+
+final class com.vocabloot.backupkit/RestorePlan { // com.vocabloot.backupkit/RestorePlan|null[0]
+    constructor <init>(com.vocabloot.backupkit/SourceRef, kotlin.collections/List<com.vocabloot.backupkit/RestoreFile>) // com.vocabloot.backupkit/RestorePlan.<init>|<init>(com.vocabloot.backupkit.SourceRef;kotlin.collections.List<com.vocabloot.backupkit.RestoreFile>){}[0]
+
+    final val files // com.vocabloot.backupkit/RestorePlan.files|{}files[0]
+        final fun <get-files>(): kotlin.collections/List<com.vocabloot.backupkit/RestoreFile> // com.vocabloot.backupkit/RestorePlan.files.<get-files>|<get-files>(){}[0]
+    final val source // com.vocabloot.backupkit/RestorePlan.source|{}source[0]
+        final fun <get-source>(): com.vocabloot.backupkit/SourceRef // com.vocabloot.backupkit/RestorePlan.source.<get-source>|<get-source>(){}[0]
+}
+
+final class com.vocabloot.backupkit/RestoreRecord { // com.vocabloot.backupkit/RestoreRecord|null[0]
+    constructor <init>(kotlin/String, com.vocabloot.backupkit/SourceRef, kotlin.collections/List<com.vocabloot.backupkit/RestoreFileRecord>, kotlin/Long, kotlin/Long? = ...) // com.vocabloot.backupkit/RestoreRecord.<init>|<init>(kotlin.String;com.vocabloot.backupkit.SourceRef;kotlin.collections.List<com.vocabloot.backupkit.RestoreFileRecord>;kotlin.Long;kotlin.Long?){}[0]
+
+    final val completedAtEpochMs // com.vocabloot.backupkit/RestoreRecord.completedAtEpochMs|{}completedAtEpochMs[0]
+        final fun <get-completedAtEpochMs>(): kotlin/Long? // com.vocabloot.backupkit/RestoreRecord.completedAtEpochMs.<get-completedAtEpochMs>|<get-completedAtEpochMs>(){}[0]
+    final val downloaded // com.vocabloot.backupkit/RestoreRecord.downloaded|{}downloaded[0]
+        final fun <get-downloaded>(): kotlin/Int // com.vocabloot.backupkit/RestoreRecord.downloaded.<get-downloaded>|<get-downloaded>(){}[0]
+    final val files // com.vocabloot.backupkit/RestoreRecord.files|{}files[0]
+        final fun <get-files>(): kotlin.collections/List<com.vocabloot.backupkit/RestoreFileRecord> // com.vocabloot.backupkit/RestoreRecord.files.<get-files>|<get-files>(){}[0]
+    final val pending // com.vocabloot.backupkit/RestoreRecord.pending|{}pending[0]
+        final fun <get-pending>(): kotlin.collections/List<com.vocabloot.backupkit/RestoreFileRecord> // com.vocabloot.backupkit/RestoreRecord.pending.<get-pending>|<get-pending>(){}[0]
+    final val runId // com.vocabloot.backupkit/RestoreRecord.runId|{}runId[0]
+        final fun <get-runId>(): kotlin/String // com.vocabloot.backupkit/RestoreRecord.runId.<get-runId>|<get-runId>(){}[0]
+    final val source // com.vocabloot.backupkit/RestoreRecord.source|{}source[0]
+        final fun <get-source>(): com.vocabloot.backupkit/SourceRef // com.vocabloot.backupkit/RestoreRecord.source.<get-source>|<get-source>(){}[0]
+    final val startedAtEpochMs // com.vocabloot.backupkit/RestoreRecord.startedAtEpochMs|{}startedAtEpochMs[0]
+        final fun <get-startedAtEpochMs>(): kotlin/Long // com.vocabloot.backupkit/RestoreRecord.startedAtEpochMs.<get-startedAtEpochMs>|<get-startedAtEpochMs>(){}[0]
+
+    final fun component1(): kotlin/String // com.vocabloot.backupkit/RestoreRecord.component1|component1(){}[0]
+    final fun component2(): com.vocabloot.backupkit/SourceRef // com.vocabloot.backupkit/RestoreRecord.component2|component2(){}[0]
+    final fun component3(): kotlin.collections/List<com.vocabloot.backupkit/RestoreFileRecord> // com.vocabloot.backupkit/RestoreRecord.component3|component3(){}[0]
+    final fun component4(): kotlin/Long // com.vocabloot.backupkit/RestoreRecord.component4|component4(){}[0]
+    final fun component5(): kotlin/Long? // com.vocabloot.backupkit/RestoreRecord.component5|component5(){}[0]
+    final fun copy(kotlin/String = ..., com.vocabloot.backupkit/SourceRef = ..., kotlin.collections/List<com.vocabloot.backupkit/RestoreFileRecord> = ..., kotlin/Long = ..., kotlin/Long? = ...): com.vocabloot.backupkit/RestoreRecord // com.vocabloot.backupkit/RestoreRecord.copy|copy(kotlin.String;com.vocabloot.backupkit.SourceRef;kotlin.collections.List<com.vocabloot.backupkit.RestoreFileRecord>;kotlin.Long;kotlin.Long?){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // com.vocabloot.backupkit/RestoreRecord.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // com.vocabloot.backupkit/RestoreRecord.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // com.vocabloot.backupkit/RestoreRecord.toString|toString(){}[0]
+
+    final object $serializer : kotlinx.serialization.internal/GeneratedSerializer<com.vocabloot.backupkit/RestoreRecord> { // com.vocabloot.backupkit/RestoreRecord.$serializer|null[0]
+        final val descriptor // com.vocabloot.backupkit/RestoreRecord.$serializer.descriptor|{}descriptor[0]
+            final fun <get-descriptor>(): kotlinx.serialization.descriptors/SerialDescriptor // com.vocabloot.backupkit/RestoreRecord.$serializer.descriptor.<get-descriptor>|<get-descriptor>(){}[0]
+
+        final fun childSerializers(): kotlin/Array<kotlinx.serialization/KSerializer<*>> // com.vocabloot.backupkit/RestoreRecord.$serializer.childSerializers|childSerializers(){}[0]
+        final fun deserialize(kotlinx.serialization.encoding/Decoder): com.vocabloot.backupkit/RestoreRecord // com.vocabloot.backupkit/RestoreRecord.$serializer.deserialize|deserialize(kotlinx.serialization.encoding.Decoder){}[0]
+        final fun serialize(kotlinx.serialization.encoding/Encoder, com.vocabloot.backupkit/RestoreRecord) // com.vocabloot.backupkit/RestoreRecord.$serializer.serialize|serialize(kotlinx.serialization.encoding.Encoder;com.vocabloot.backupkit.RestoreRecord){}[0]
+    }
+
+    final object Companion { // com.vocabloot.backupkit/RestoreRecord.Companion|null[0]
+        final val $childSerializers // com.vocabloot.backupkit/RestoreRecord.Companion.$childSerializers|{}$childSerializers[0]
+
+        final fun serializer(): kotlinx.serialization/KSerializer<com.vocabloot.backupkit/RestoreRecord> // com.vocabloot.backupkit/RestoreRecord.Companion.serializer|serializer(){}[0]
+    }
+}
+
+final class com.vocabloot.backupkit/SourceRef { // com.vocabloot.backupkit/SourceRef|null[0]
+    constructor <init>(kotlin/String?, kotlin/String?, kotlin/String) // com.vocabloot.backupkit/SourceRef.<init>|<init>(kotlin.String?;kotlin.String?;kotlin.String){}[0]
+
+    final val identityKey // com.vocabloot.backupkit/SourceRef.identityKey|{}identityKey[0]
+        final fun <get-identityKey>(): kotlin/String? // com.vocabloot.backupkit/SourceRef.identityKey.<get-identityKey>|<get-identityKey>(){}[0]
+    final val markerFingerprint // com.vocabloot.backupkit/SourceRef.markerFingerprint|{}markerFingerprint[0]
+        final fun <get-markerFingerprint>(): kotlin/String // com.vocabloot.backupkit/SourceRef.markerFingerprint.<get-markerFingerprint>|<get-markerFingerprint>(){}[0]
+    final val markerRemoteId // com.vocabloot.backupkit/SourceRef.markerRemoteId|{}markerRemoteId[0]
+        final fun <get-markerRemoteId>(): kotlin/String? // com.vocabloot.backupkit/SourceRef.markerRemoteId.<get-markerRemoteId>|<get-markerRemoteId>(){}[0]
+
+    final fun component1(): kotlin/String? // com.vocabloot.backupkit/SourceRef.component1|component1(){}[0]
+    final fun component2(): kotlin/String? // com.vocabloot.backupkit/SourceRef.component2|component2(){}[0]
+    final fun component3(): kotlin/String // com.vocabloot.backupkit/SourceRef.component3|component3(){}[0]
+    final fun copy(kotlin/String? = ..., kotlin/String? = ..., kotlin/String = ...): com.vocabloot.backupkit/SourceRef // com.vocabloot.backupkit/SourceRef.copy|copy(kotlin.String?;kotlin.String?;kotlin.String){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // com.vocabloot.backupkit/SourceRef.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // com.vocabloot.backupkit/SourceRef.hashCode|hashCode(){}[0]
+    final fun matches(com.vocabloot.backupkit/SourceRef): kotlin/Boolean // com.vocabloot.backupkit/SourceRef.matches|matches(com.vocabloot.backupkit.SourceRef){}[0]
+    final fun toString(): kotlin/String // com.vocabloot.backupkit/SourceRef.toString|toString(){}[0]
+
+    final object $serializer : kotlinx.serialization.internal/GeneratedSerializer<com.vocabloot.backupkit/SourceRef> { // com.vocabloot.backupkit/SourceRef.$serializer|null[0]
+        final val descriptor // com.vocabloot.backupkit/SourceRef.$serializer.descriptor|{}descriptor[0]
+            final fun <get-descriptor>(): kotlinx.serialization.descriptors/SerialDescriptor // com.vocabloot.backupkit/SourceRef.$serializer.descriptor.<get-descriptor>|<get-descriptor>(){}[0]
+
+        final fun childSerializers(): kotlin/Array<kotlinx.serialization/KSerializer<*>> // com.vocabloot.backupkit/SourceRef.$serializer.childSerializers|childSerializers(){}[0]
+        final fun deserialize(kotlinx.serialization.encoding/Decoder): com.vocabloot.backupkit/SourceRef // com.vocabloot.backupkit/SourceRef.$serializer.deserialize|deserialize(kotlinx.serialization.encoding.Decoder){}[0]
+        final fun serialize(kotlinx.serialization.encoding/Encoder, com.vocabloot.backupkit/SourceRef) // com.vocabloot.backupkit/SourceRef.$serializer.serialize|serialize(kotlinx.serialization.encoding.Encoder;com.vocabloot.backupkit.SourceRef){}[0]
+    }
+
+    final object Companion { // com.vocabloot.backupkit/SourceRef.Companion|null[0]
+        final fun serializer(): kotlinx.serialization/KSerializer<com.vocabloot.backupkit/SourceRef> // com.vocabloot.backupkit/SourceRef.Companion.serializer|serializer(){}[0]
+    }
 }
 
 final class com.vocabloot.backupkit/SyncEngine { // com.vocabloot.backupkit/SyncEngine|null[0]
     constructor <init>(com.vocabloot.backupkit/CloudStorage, com.vocabloot.backupkit/SyncStateStore, com.vocabloot.backupkit/SyncPolicy, kotlin/Function0<kotlin/Long> = ...) // com.vocabloot.backupkit/SyncEngine.<init>|<init>(com.vocabloot.backupkit.CloudStorage;com.vocabloot.backupkit.SyncStateStore;com.vocabloot.backupkit.SyncPolicy;kotlin.Function0<kotlin.Long>){}[0]
 
-    final suspend fun inspect(): com.vocabloot.backupkit/RemoteInspection // com.vocabloot.backupkit/SyncEngine.inspect|inspect(){}[0]
+    final val hold // com.vocabloot.backupkit/SyncEngine.hold|{}hold[0]
+        final fun <get-hold>(): com.vocabloot.backupkit/WriteHold // com.vocabloot.backupkit/SyncEngine.hold.<get-hold>|<get-hold>(){}[0]
+
+    final fun setHold(com.vocabloot.backupkit/WriteHold) // com.vocabloot.backupkit/SyncEngine.setHold|setHold(com.vocabloot.backupkit.WriteHold){}[0]
+    final suspend fun probe(): com.vocabloot.backupkit/RemoteProbe // com.vocabloot.backupkit/SyncEngine.probe|probe(){}[0]
     final suspend fun sync(com.vocabloot.backupkit/SyncSnapshot, kotlin/Function2<kotlin/Int, kotlin/Int, kotlin/Unit> = ...): com.vocabloot.backupkit/SyncOutcome // com.vocabloot.backupkit/SyncEngine.sync|sync(com.vocabloot.backupkit.SyncSnapshot;kotlin.Function2<kotlin.Int,kotlin.Int,kotlin.Unit>){}[0]
 }
 
@@ -301,10 +597,12 @@ final class com.vocabloot.backupkit/SyncSnapshot { // com.vocabloot.backupkit/Sy
 }
 
 final class com.vocabloot.backupkit/SyncState { // com.vocabloot.backupkit/SyncState|null[0]
-    constructor <init>(kotlin/String = ..., kotlin/String = ..., kotlin.collections/Map<kotlin/String, com.vocabloot.backupkit/SyncedEntry> = ..., kotlin/Long? = ..., kotlin/Int = ...) // com.vocabloot.backupkit/SyncState.<init>|<init>(kotlin.String;kotlin.String;kotlin.collections.Map<kotlin.String,com.vocabloot.backupkit.SyncedEntry>;kotlin.Long?;kotlin.Int){}[0]
+    constructor <init>(kotlin/String = ..., kotlin/String = ..., kotlin.collections/Map<kotlin/String, com.vocabloot.backupkit/SyncedEntry> = ..., kotlin/Long? = ..., kotlin/Int = ..., kotlin/String = ...) // com.vocabloot.backupkit/SyncState.<init>|<init>(kotlin.String;kotlin.String;kotlin.collections.Map<kotlin.String,com.vocabloot.backupkit.SyncedEntry>;kotlin.Long?;kotlin.Int;kotlin.String){}[0]
 
     final val entries // com.vocabloot.backupkit/SyncState.entries|{}entries[0]
         final fun <get-entries>(): kotlin.collections/Map<kotlin/String, com.vocabloot.backupkit/SyncedEntry> // com.vocabloot.backupkit/SyncState.entries.<get-entries>|<get-entries>(){}[0]
+    final val hold // com.vocabloot.backupkit/SyncState.hold|{}hold[0]
+        final fun <get-hold>(): kotlin/String // com.vocabloot.backupkit/SyncState.hold.<get-hold>|<get-hold>(){}[0]
     final val identityKey // com.vocabloot.backupkit/SyncState.identityKey|{}identityKey[0]
         final fun <get-identityKey>(): kotlin/String // com.vocabloot.backupkit/SyncState.identityKey.<get-identityKey>|<get-identityKey>(){}[0]
     final val lastEntryCount // com.vocabloot.backupkit/SyncState.lastEntryCount|{}lastEntryCount[0]
@@ -319,7 +617,8 @@ final class com.vocabloot.backupkit/SyncState { // com.vocabloot.backupkit/SyncS
     final fun component3(): kotlin.collections/Map<kotlin/String, com.vocabloot.backupkit/SyncedEntry> // com.vocabloot.backupkit/SyncState.component3|component3(){}[0]
     final fun component4(): kotlin/Long? // com.vocabloot.backupkit/SyncState.component4|component4(){}[0]
     final fun component5(): kotlin/Int // com.vocabloot.backupkit/SyncState.component5|component5(){}[0]
-    final fun copy(kotlin/String = ..., kotlin/String = ..., kotlin.collections/Map<kotlin/String, com.vocabloot.backupkit/SyncedEntry> = ..., kotlin/Long? = ..., kotlin/Int = ...): com.vocabloot.backupkit/SyncState // com.vocabloot.backupkit/SyncState.copy|copy(kotlin.String;kotlin.String;kotlin.collections.Map<kotlin.String,com.vocabloot.backupkit.SyncedEntry>;kotlin.Long?;kotlin.Int){}[0]
+    final fun component6(): kotlin/String // com.vocabloot.backupkit/SyncState.component6|component6(){}[0]
+    final fun copy(kotlin/String = ..., kotlin/String = ..., kotlin.collections/Map<kotlin/String, com.vocabloot.backupkit/SyncedEntry> = ..., kotlin/Long? = ..., kotlin/Int = ..., kotlin/String = ...): com.vocabloot.backupkit/SyncState // com.vocabloot.backupkit/SyncState.copy|copy(kotlin.String;kotlin.String;kotlin.collections.Map<kotlin.String,com.vocabloot.backupkit.SyncedEntry>;kotlin.Long?;kotlin.Int;kotlin.String){}[0]
     final fun equals(kotlin/Any?): kotlin/Boolean // com.vocabloot.backupkit/SyncState.equals|equals(kotlin.Any?){}[0]
     final fun hashCode(): kotlin/Int // com.vocabloot.backupkit/SyncState.hashCode|hashCode(){}[0]
     final fun toString(): kotlin/String // com.vocabloot.backupkit/SyncState.toString|toString(){}[0]

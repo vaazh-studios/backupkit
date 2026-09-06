@@ -1,7 +1,13 @@
 package com.vocabloot.backupkit.sample
 
 import com.vocabloot.backupkit.FileSyncStateStore
-import com.vocabloot.backupkit.RemoteInspection
+import com.vocabloot.backupkit.FileRestoreRecordStore
+import com.vocabloot.backupkit.RemoteProbe
+import com.vocabloot.backupkit.RestoreEngine
+import com.vocabloot.backupkit.RestoreFile
+import com.vocabloot.backupkit.RestoreOutcome
+import com.vocabloot.backupkit.RestorePlan
+import com.vocabloot.backupkit.WriteHold
 import com.vocabloot.backupkit.SyncEngine
 import com.vocabloot.backupkit.SyncEntry
 import com.vocabloot.backupkit.SyncOutcome
@@ -56,13 +62,41 @@ class NotesBackup {
         )
     }
 
-    suspend fun inspect(): RemoteInspection = engine.inspect()
+    private val restoreEngine = RestoreEngine(
+        engine = engine,
+        storage = storage,
+        recordStore = FileRestoreRecordStore(Path(appFilesDir(), "backupkit-restore.json").toString()),
+        clock = ::nowEpochMs,
+    )
 
-    suspend fun restore(): List<String> {
-        val bytes = storage.readBytes("notes.json") ?: return emptyList()
-        val notes: List<String> = json.decodeFromString(bytes.decodeToString())
-        save(notes)
-        return notes
+    /** Typed inspection for the first-launch offer: Found carries the header bytes and a pinned source. */
+    suspend fun probe(): RemoteProbe = engine.probe()
+
+    /**
+     * The restore contract in four lines: hold writes, download the pinned set (notes.json is
+     * required, the header is optional here), import, release the hold. A kill mid-way leaves a
+     * record that `restoreEngine.resume()` continues from.
+     */
+    suspend fun restore(found: RemoteProbe.Found): List<String> {
+        engine.setHold(WriteHold.RestoreRunning)
+        val plan = RestorePlan(
+            source = found.source,
+            files = listOf(
+                RestoreFile(path = "notes.json", toLocalPath = notesPath.toString(), remoteId = found.files.firstOrNull { it.path == "notes.json" }?.remoteId, required = true),
+                RestoreFile(path = "backup.json", toLocalPath = Path(appFilesDir(), "restored-backup.json").toString(), required = false),
+            ),
+        )
+        return when (restoreEngine.start(plan)) {
+            is RestoreOutcome.Completed, is RestoreOutcome.Partial -> {
+                engine.setHold(WriteHold.None)
+                restoreEngine.clear()
+                load()
+            }
+            is RestoreOutcome.Failed -> {
+                engine.setHold(WriteHold.RestoreIncomplete) // keep the cloud copy safe until the user retries
+                emptyList()
+            }
+        }
     }
 
     fun parseHeader(bytes: ByteArray): Header = json.decodeFromString(bytes.decodeToString())

@@ -16,7 +16,7 @@ app-data folder on Android. No server, no account on your side, no OAuth client 
 - **The user's cloud, not yours.** Files land in the app's private iCloud container or Drive's hidden `appDataFolder` (the one WhatsApp uses). Nothing to host, no accounts to run.
 - **Zero code on iOS, one tap on Android.** The iCloud entitlement is the whole iOS setup; on Android the user sees Google's permission dialog once, then tokens are silent.
 - **Complete-or-absent sync.** `SyncEngine` diffs, orders uploads so a marker file lands last, saves state after every step, resumes after a kill, and detects an account switch instead of merging two accounts.
-- **Restore offer on first launch.** One call tells you whether a backup exists and what its header says.
+- **Restore that survives a kill.** A typed probe for the offer, a write hold so sync never clobbers a half-restored device, and a resumable download with a commit boundary, per-file attempts and source revalidation.
 - **Typed errors.** Every failure is one of seven `CloudError` values; nothing platform-specific leaks out.
 - **Small.** About 1,200 lines. Coroutines, kotlinx-serialization and kotlinx-io in common code; Ktor and Play Services Identity on Android only; iOS links no HTTP client. No DI framework, no Compose, no Firebase.
 
@@ -138,12 +138,31 @@ Both implementations behave identically, with two documented differences: Drive 
 ## Restore on first launch
 
 ```kotlin
-val remote = engine.inspect()
-if (remote.marker != null) offerRestore(parseHeader(remote.marker))
+when (val probe = engine.probe()) {
+    is RemoteProbe.Found -> offerRestore(parseHeader(probe.marker), probe.source)   // your schema, your UI
+    RemoteProbe.NotReady -> showStillUploading()                                    // a writer never finished, or iCloud is still fetching
+    RemoteProbe.None, is RemoteProbe.Unavailable, is RemoteProbe.Failed -> Unit
+}
 ```
 
-Then `storage.downloadFile(path, toLocalPath)` for each `remote.files` entry you want. Importing the
-files into your own data structures is your code; BackupKit never guesses your schema.
+Then hand `RestoreEngine` a plan pinned to that source. Required files are the commit boundary: all of
+them download before any optional file, and one failure fails the run. Optional files are best-effort
+with three attempts each. Progress is written to a record after every file, so a killed process
+continues from where it stopped with `resume()`, which first re-checks that the remote set is still the
+one the user accepted and reports `SourceChanged` otherwise.
+
+```kotlin
+engine.setHold(WriteHold.RestoreRunning)                       // sync() writes nothing while a hold is set
+val outcome = RestoreEngine(engine, storage, FileRestoreRecordStore(path)).start(
+    RestorePlan(source = probe.source, files = listOf(
+        RestoreFile("manifest.json", toLocalPath = "$dir/manifest.json", required = true),
+        RestoreFile("photos/1.jpg", toLocalPath = "$dir/1.jpg", required = false),
+    )),
+)
+if (outcome !is RestoreOutcome.Failed) { importFrom(dir); engine.setHold(WriteHold.None) }
+```
+
+Importing the files into your own data structures is your code; BackupKit never guesses your schema.
 
 ## Android consent, once
 

@@ -9,6 +9,14 @@
 reusable part). Vocabloot's cloud backup is the most novel KMP piece we
 own and nothing on klibs.io or Maven Central covers it.
 
+
+> **Delta 2026-09-06 (before the first release):** `inspect()` / `RemoteInspection` were replaced by
+> `SyncEngine.probe(): RemoteProbe` with a pinned `SourceRef`; `WriteHold` was added to `SyncState` and
+> gates `sync()`; `CloudStorage.prefetch` was added; `RestoreEngine` (required-first commit boundary,
+> three-strike optional files, durable `RestoreRecord`, source revalidation on `resume()`) was added.
+> Plan: `docs/superpowers/plans/2026-09-06-backupkit-restore.md` in the Vocabloot repo; rules in
+> `docs/contract.md`.
+
 ## 1. What it is
 
 BackupKit mirrors an app's files into the user's **own** cloud, with no

@@ -26,7 +26,8 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.vocabloot.backupkit.CloudAvailability
+import com.vocabloot.backupkit.RemoteProbe
+import com.vocabloot.backupkit.UnavailableReason
 import com.vocabloot.backupkit.SyncOutcome
 import kotlinx.coroutines.launch
 
@@ -40,7 +41,7 @@ fun App(requestConsent: (onResult: (Boolean) -> Unit) -> Unit) {
     val notes = remember { mutableStateListOf<String>().apply { addAll(backup.load()) } }
     var draft by remember { mutableStateOf("") }
     var status by remember { mutableStateOf("Not synced yet") }
-    var restoreOffer by remember { mutableStateOf<Header?>(null) }
+    var restoreOffer by remember { mutableStateOf<RemoteProbe.Found?>(null) }
     val scope = rememberCoroutineScope()
 
     fun sync() = scope.launch {
@@ -54,15 +55,18 @@ fun App(requestConsent: (onResult: (Boolean) -> Unit) -> Unit) {
     }
 
     LaunchedEffect(Unit) {
-        val remote = backup.inspect()
-        if (remote.availability == CloudAvailability.NeedsConsent) {
-            requestConsent { granted -> if (granted) scope.launch { backup.inspect().marker?.let { restoreOffer = backup.parseHeader(it) } } }
-        } else if (notes.isEmpty()) {
-            remote.marker?.let { restoreOffer = backup.parseHeader(it) }
+        when (val probe = backup.probe()) {
+            is RemoteProbe.Unavailable -> if (probe.reason == UnavailableReason.NeedsConsent) {
+                requestConsent { granted -> if (granted) scope.launch { (backup.probe() as? RemoteProbe.Found)?.let { restoreOffer = it } } }
+            }
+            is RemoteProbe.Found -> if (notes.isEmpty()) restoreOffer = probe
+            RemoteProbe.NotReady -> status = "Backup still uploading from another device"
+            else -> Unit
         }
     }
 
-    restoreOffer?.let { header ->
+    restoreOffer?.let { found ->
+        val header = backup.parseHeader(found.marker)
         AlertDialog(
             onDismissRequest = { restoreOffer = null },
             title = { Text("Restore ${header.noteCount} notes?") },
@@ -70,7 +74,7 @@ fun App(requestConsent: (onResult: (Boolean) -> Unit) -> Unit) {
             confirmButton = {
                 TextButton(onClick = {
                     restoreOffer = null
-                    scope.launch { notes.clear(); notes.addAll(backup.restore()); status = "Restored ${notes.size} notes" }
+                    scope.launch { notes.clear(); notes.addAll(backup.restore(found)); status = "Restored ${notes.size} notes" }
                 }) { Text("Restore") }
             },
             dismissButton = { TextButton(onClick = { restoreOffer = null }) { Text("Not now") } },
