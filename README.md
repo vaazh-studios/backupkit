@@ -16,7 +16,7 @@ app-data folder on Android. No server, no account on your side, no OAuth client 
 ## Features
 
 - **The user's cloud, not yours.** Files land in the app's private iCloud container or Drive's hidden `appDataFolder` (the one WhatsApp uses). Nothing to host, no accounts to run.
-- **Zero code on iOS, one tap on Android.** The iCloud entitlement is the whole iOS setup; on Android the user sees Google's permission dialog once, then tokens are silent.
+- **Zero code on iOS, one tap on Android.** The iCloud entitlement is the whole iOS setup, for CloudKit or iCloud Drive; on Android the user sees Google's permission dialog once, then tokens are silent.
 - **Complete-or-absent sync.** `SyncEngine` diffs, orders uploads so a marker file lands last, saves state after every step, resumes after a kill, and detects an account switch instead of merging two accounts.
 - **Restore that survives a kill.** A typed probe for the offer, a write hold so sync never clobbers a half-restored device, and a resumable download with a commit boundary, per-file attempts and source revalidation.
 - **Typed errors.** Every failure is one of seven `CloudError` values; nothing platform-specific leaks out.
@@ -24,15 +24,19 @@ app-data folder on Android. No server, no account on your side, no OAuth client 
 
 ## Support matrix
 
-| | iCloud Drive (iOS) | Google Drive app-data (Android) |
-|---|---|---|
-| Transport `CloudStorage` | ✅ `ICloudStorage` | ✅ `GoogleDriveStorage` |
-| Sync `SyncEngine` | ✅ | ✅ |
-| Auth | entitlement only | silent token, `DriveConsent` for the one-time dialog |
-| Nested paths | ✅ | flat folder, path used as file name |
-| File ids | – | `RemoteFile.remoteId` |
-| Single upload cap | container quota | 5 MB (multipart) |
-| Verified on a real device | ships in Vocabloot; sample pass pending | ships in Vocabloot, device pass 2026-09-02 |
+| | CloudKit (iOS) | iCloud Drive (iOS) | Google Drive app-data (Android) |
+|---|---|---|---|
+| Transport `CloudStorage` | ✅ `CloudKitStorage` | ✅ `ICloudStorage` | ✅ `GoogleDriveStorage` |
+| Sync `SyncEngine` | ✅ | ✅ | ✅ |
+| Auth | entitlement only | entitlement only | silent token, `DriveConsent` for the one-time dialog |
+| Nested paths | ✅ (record name encodes `/`) | ✅ | flat folder, path used as file name |
+| File ids | – | – | `RemoteFile.remoteId` |
+| Sizes in `list()` | always known | -1 until downloaded | always known |
+| Reads | network fetch, batched by `prefetch` | placeholder download, one at a time | network fetch |
+| Single upload cap | 1 asset per save, container quota | container quota | 5 MB (multipart) |
+| Verified on a real device | Vocabloot device pass pending | shipped in Vocabloot 1.2 | shipped in Vocabloot 1.2, device pass 2026-09-02 |
+
+Which iOS transport? **CloudKit** for app data the user never opens as files: saves complete when Apple's server has the record, reads are definite, no placeholder files. **iCloud Drive** when the files should also be visible in the Files app or another app reads the same container. Both are the user's own iCloud storage.
 
 Targets: `android`, `iosArm64`, `iosSimulatorArm64`, `iosX64`. Kotlin 2.3.20, minSdk 24, iOS 16+.
 
@@ -81,7 +85,7 @@ The sample needs its own iCloud container (`iCloud.com.vocabloot.backupkit.sampl
 ## Quickstart
 
 ```kotlin
-val storage: CloudStorage = platformCloudStorage()      // ICloudStorage() on iOS, GoogleDriveStorage(context) on Android
+val storage: CloudStorage = platformCloudStorage()      // CloudKitStorage(...) or ICloudStorage() on iOS, GoogleDriveStorage(context) on Android
 
 val engine = SyncEngine(
     storage = storage,

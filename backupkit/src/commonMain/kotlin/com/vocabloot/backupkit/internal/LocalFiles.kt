@@ -38,4 +38,26 @@ internal object LocalFiles {
     fun ensureParentDir(path: String) {
         Path(path).parent?.let { SystemFileSystem.createDirectories(it, mustCreate = false) }
     }
+
+    fun exists(path: String): Boolean = SystemFileSystem.exists(Path(path))
+
+    /** File names directly inside [dir]; empty when the directory is missing. */
+    fun listNames(dir: String): List<String> =
+        runCatching { SystemFileSystem.list(Path(dir)).map { it.name } }.getOrDefault(emptyList())
+
+    /** Replace [to] with [from]. Rename first; a cross-volume source (CloudKit's staging area) falls back to copy + delete. */
+    fun move(from: String, to: String) {
+        ensureParentDir(to)
+        SystemFileSystem.delete(Path(to), mustExist = false)
+        runCatching { SystemFileSystem.atomicMove(Path(from), Path(to)) }.onFailure {
+            val bytes = readAllBytes(from) ?: throw it
+            writeAllBytes(to, bytes)
+            delete(from)
+        }
+    }
+
+    fun copy(from: String, to: String) {
+        val bytes = readAllBytes(from) ?: throw IllegalStateException("missing file: $from")
+        writeAllBytes(to, bytes)
+    }
 }

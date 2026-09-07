@@ -13,6 +13,14 @@
 9. **Drive identity adoption.** When `identityKey()` is null, the marker's file id becomes the identity after its first upload.
 10. **Progress.** `onProgress(done, total)` fires before the first step and after every put and delete.
 
+## CloudKit specifics
+
+- `RemoteFile.remoteId` is null and `size` is always known; the engine treats CloudKit exactly like iCloud Drive for identity (the user record name from `fetchUserRecordID`, never the marker id).
+- `list()` fetches zone changes since the persisted checkpoint (token plus records, written together per batch); an expired token, a missing zone or a zone the user deleted resets the checkpoint and fetches from the beginning once. A checkpoint from another account, container environment or zone is discarded.
+- `writeBytes` / `writeFile` save one record per operation with `saveAllKeys` (single writer, last write wins). `delete` of an absent record succeeds.
+- `readBytes` / `downloadFile` serve a cached asset when its change tag matches the checkpoint; otherwise one fetch. `prefetch` fetches eight records per request, two requests in flight, never throws.
+- Rate limit, busy zone and service unavailable are retried once after the server's `retryAfter` (capped at 10 s), then `Transport`.
+
 ## Error mapping
 
 | Situation | `CloudError` |

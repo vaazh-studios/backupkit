@@ -310,6 +310,24 @@ sealed interface com.vocabloot.backupkit/SyncSource { // com.vocabloot.backupkit
     }
 }
 
+final class com.vocabloot.backupkit/CloudKitStorage : com.vocabloot.backupkit/CloudStorage { // com.vocabloot.backupkit/CloudKitStorage|null[0]
+    constructor <init>(kotlin/String, kotlin/String, kotlin/String? = ..., kotlin/String = ..., kotlin/String = ..., kotlin/String = ...) // com.vocabloot.backupkit/CloudKitStorage.<init>|<init>(kotlin.String;kotlin.String;kotlin.String?;kotlin.String;kotlin.String;kotlin.String){}[0]
+
+    final val provider // com.vocabloot.backupkit/CloudKitStorage.provider|{}provider[0]
+        final fun <get-provider>(): com.vocabloot.backupkit/CloudProvider // com.vocabloot.backupkit/CloudKitStorage.provider.<get-provider>|<get-provider>(){}[0]
+
+    final suspend fun availability(): com.vocabloot.backupkit/CloudAvailability // com.vocabloot.backupkit/CloudKitStorage.availability|availability(){}[0]
+    final suspend fun delete(kotlin/String, kotlin/String?) // com.vocabloot.backupkit/CloudKitStorage.delete|delete(kotlin.String;kotlin.String?){}[0]
+    final suspend fun downloadFile(kotlin/String, kotlin/String, kotlin/String?) // com.vocabloot.backupkit/CloudKitStorage.downloadFile|downloadFile(kotlin.String;kotlin.String;kotlin.String?){}[0]
+    final suspend fun exists(kotlin/String): kotlin/Boolean // com.vocabloot.backupkit/CloudKitStorage.exists|exists(kotlin.String){}[0]
+    final suspend fun identityKey(): kotlin/String? // com.vocabloot.backupkit/CloudKitStorage.identityKey|identityKey(){}[0]
+    final suspend fun list(): kotlin.collections/List<com.vocabloot.backupkit/RemoteFile> // com.vocabloot.backupkit/CloudKitStorage.list|list(){}[0]
+    final suspend fun prefetch(kotlin.collections/List<kotlin/String>) // com.vocabloot.backupkit/CloudKitStorage.prefetch|prefetch(kotlin.collections.List<kotlin.String>){}[0]
+    final suspend fun readBytes(kotlin/String, kotlin/String?): kotlin/ByteArray? // com.vocabloot.backupkit/CloudKitStorage.readBytes|readBytes(kotlin.String;kotlin.String?){}[0]
+    final suspend fun writeBytes(kotlin/String, kotlin/ByteArray, kotlin/String, kotlin/String?): kotlin/String? // com.vocabloot.backupkit/CloudKitStorage.writeBytes|writeBytes(kotlin.String;kotlin.ByteArray;kotlin.String;kotlin.String?){}[0]
+    final suspend fun writeFile(kotlin/String, kotlin/String, kotlin/String, kotlin/String?): kotlin/String? // com.vocabloot.backupkit/CloudKitStorage.writeFile|writeFile(kotlin.String;kotlin.String;kotlin.String;kotlin.String?){}[0]
+}
+
 final class com.vocabloot.backupkit/CloudStorageException : kotlin/Exception { // com.vocabloot.backupkit/CloudStorageException|null[0]
     constructor <init>(com.vocabloot.backupkit/CloudError, kotlin/String, kotlin/Throwable? = ...) // com.vocabloot.backupkit/CloudStorageException.<init>|<init>(com.vocabloot.backupkit.CloudError;kotlin.String;kotlin.Throwable?){}[0]
 
