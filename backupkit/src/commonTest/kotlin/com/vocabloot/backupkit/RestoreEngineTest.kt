@@ -19,8 +19,14 @@ class RestoreEngineTest {
         val records = MemoryRestoreRecordStore()
         var now = 1_000L
         val engine = SyncEngine(storage, syncState, SyncPolicy(markerPath = "backup.json"), clock = { now })
-        val restore = RestoreEngine(engine, storage, records, clock = { now }, newRunId = { "run-1" })
-        val progress = mutableListOf<Pair<Int, Int>>()
+        val placements = mutableListOf<Pair<String?, List<String>>>()
+        var reject: (String?) -> String? = { null }
+        val placement = RestorePlacement { group, files ->
+            placements += group to files.map { it.path }
+            reject(group)?.let { PlacementResult.Rejected(it) } ?: PlacementResult.Placed
+        }
+        val restore = RestoreEngine(engine, storage, records, placement = placement, clock = { now }, newRunId = { "run-1" })
+        val progress = mutableListOf<RestoreProgress>()
 
         init {
             storage.remote["backup.json"] = "{\"count\":2}".encodeToByteArray()
@@ -41,8 +47,20 @@ class RestoreEngineTest {
             ),
         )
 
-        suspend fun start() = restore.start(plan()) { d, t -> progress += d to t }
-        suspend fun resume() = restore.resume { d, t -> progress += d to t }
+        suspend fun start() = restore.start(plan()) { progress += it }
+        suspend fun start(plan: RestorePlan) = restore.start(plan) { progress += it }
+        suspend fun resume(resetAttempts: Boolean = false) = restore.resume(resetAttempts) { progress += it }
+
+        /** Two photos of one word, plus the word's own group of two files. */
+        suspend fun groupedPlan(): RestorePlan = RestorePlan(
+            source = source(),
+            files = listOf(
+                RestoreFile("manifest.json", "/local/manifest.json", required = true, group = "meta"),
+                RestoreFile("backup.json", "/local/backup.json", required = true, group = "meta"),
+                RestoreFile("items/a.jpg", "/local/a.jpg", required = false, group = "w1"),
+                RestoreFile("items/b.jpg", "/local/b.jpg", required = false, group = "w1"),
+            ),
+        )
     }
 
     @Test
@@ -167,7 +185,9 @@ class RestoreEngineTest {
     fun progress_counts_every_file() = runTest {
         val h = Harness()
         h.start()
-        assertEquals(listOf(0 to 4, 1 to 4, 2 to 4, 3 to 4, 4 to 4), h.progress)
+        assertEquals(listOf(0, 1, 2, 3, 4), h.progress.map { it.filesDone })
+        assertEquals(4, h.progress.last().filesTotal)
+        assertEquals(4 to 4, h.progress.last().groupsDone to h.progress.last().groupsTotal, "ungrouped files are their own groups")
     }
 
     @Test
@@ -195,6 +215,69 @@ class RestoreEngineTest {
 
         assertEquals(1, h.storage.listCalls)
         assertTrue(h.restore.record()!!.files.all { it.remoteId != null })
+    }
+
+    @Test
+    fun a_group_is_placed_once_with_all_its_files_and_counted_as_one() = runTest {
+        val h = Harness()
+
+        val outcome = h.start(h.groupedPlan())
+
+        assertEquals(RestoreOutcome.Completed(4), outcome)
+        assertEquals(listOf<Pair<String?, List<String>>>("meta" to listOf("manifest.json", "backup.json"), "w1" to listOf("items/a.jpg", "items/b.jpg")), h.placements)
+        assertEquals(2 to 2, h.progress.last().groupsDone to h.progress.last().groupsTotal)
+        // The word counts as done only when its last file has been placed, and the count never moves back.
+        val groups = h.progress.map { it.groupsDone }
+        assertEquals(0, groups.first()); assertEquals(2, groups.last())
+        assertTrue(groups.zipWithNext().all { (a, b) -> b >= a }, "$groups")
+    }
+
+    @Test
+    fun a_rejected_optional_group_keeps_its_files_pending_with_one_more_attempt_each() = runTest {
+        val h = Harness()
+        h.reject = { group -> if (group == "w1") "not in manifest" else null }
+
+        val outcome = h.start(h.groupedPlan())
+
+        assertEquals(RestoreOutcome.Partial(2, listOf("items/a.jpg", "items/b.jpg")), outcome)
+        val record = h.restore.record()!!
+        assertEquals(listOf(1, 1), record.files.filter { it.group == "w1" }.map { it.attempts })
+        assertTrue(record.files.filter { it.group == "w1" }.none { it.downloaded }, "rejected files are staged again next run")
+    }
+
+    @Test
+    fun a_rejected_required_group_fails_the_run() = runTest {
+        val h = Harness()
+        h.reject = { group -> if (group == "meta") "bad manifest" else null }
+
+        val outcome = h.start(h.groupedPlan())
+
+        assertEquals(RestoreOutcome.Failed(RestoreError.PlacementRejected, 0), outcome)
+        assertEquals(listOf<Pair<String?, List<String>>>("meta" to listOf("manifest.json", "backup.json")), h.placements, "optional files were never touched")
+    }
+
+    @Test
+    fun a_partially_downloaded_group_places_what_landed_and_retries_the_rest() = runTest {
+        val h = Harness()
+        h.storage.failDownloadsContaining = "b.jpg"
+
+        val outcome = h.start(h.groupedPlan())
+
+        assertEquals(RestoreOutcome.Partial(3, listOf("items/b.jpg")), outcome)
+        assertEquals<Pair<String?, List<String>>>("w1" to listOf("items/a.jpg"), h.placements.last())
+        assertEquals(1 to 2, h.progress.last().groupsDone to h.progress.last().groupsTotal, "the word is not done until both files are")
+    }
+
+    @Test
+    fun an_explicit_retry_resets_the_attempt_cap() = runTest {
+        val h = Harness()
+        h.storage.failDownloadsContaining = "b.jpg"
+        h.start(); h.resume(); h.resume()
+        assertEquals(3, h.restore.record()!!.files.first { it.path == "items/b.jpg" }.attempts)
+        h.storage.failDownloadsContaining = null
+
+        assertEquals(RestoreOutcome.Partial(3, listOf("items/b.jpg")), h.resume(), "a plain resume keeps the cap")
+        assertEquals(RestoreOutcome.Completed(4), h.resume(resetAttempts = true))
     }
 
     @Test

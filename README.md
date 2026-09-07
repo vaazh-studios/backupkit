@@ -153,19 +153,27 @@ when (val probe = engine.probe()) {
 
 Then hand `RestoreEngine` a plan pinned to that source. Required files are the commit boundary: all of
 them download before any optional file, and one failure fails the run. Optional files are best-effort
-with three attempts each. Progress is written to a record after every file, so a killed process
-continues from where it stopped with `resume()`, which first re-checks that the remote set is still the
-one the user accepted and reports `SourceChanged` otherwise.
+with three attempts each. Give files an opaque `group` (a record id, a word) and a `RestorePlacement`:
+the engine hands each group to you once its files are local, you import them into your own model and
+answer `Placed` or `Rejected`, and progress comes back in files and in groups. Progress is written to
+a record after every file, so a killed process continues from where it stopped with `resume()`, which
+first re-checks that the remote set is still the one the user accepted and reports `SourceChanged`
+otherwise.
 
 ```kotlin
 engine.setHold(WriteHold.RestoreRunning)                       // sync() writes nothing while a hold is set
-val outcome = RestoreEngine(engine, storage, FileRestoreRecordStore(path)).start(
+val restore = RestoreEngine(engine, storage, FileRestoreRecordStore(path), placement = { group, files ->
+    if (group == "meta") importManifest(files) else attachPhotos(group, files)   // your model, your rules
+    PlacementResult.Placed
+})
+val outcome = restore.start(
     RestorePlan(source = probe.source, files = listOf(
-        RestoreFile("manifest.json", toLocalPath = "$dir/manifest.json", required = true),
-        RestoreFile("photos/1.jpg", toLocalPath = "$dir/1.jpg", required = false),
+        RestoreFile("manifest.json", toLocalPath = "$dir/manifest.json", required = true, group = "meta"),
+        RestoreFile("photos/w1.jpg", toLocalPath = "$dir/w1.jpg", required = false, group = "w1"),
+        RestoreFile("photos/w1.png", toLocalPath = "$dir/w1.png", required = false, group = "w1"),
     )),
-)
-if (outcome !is RestoreOutcome.Failed) { importFrom(dir); engine.setHold(WriteHold.None) }
+) { progress -> show("Photos for ${'$'}{progress.groupsDone} of ${'$'}{progress.groupsTotal} words") }
+if (outcome !is RestoreOutcome.Failed) engine.setHold(WriteHold.None)
 ```
 
 Importing the files into your own data structures is your code; BackupKit never guesses your schema.

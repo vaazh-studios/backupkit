@@ -45,8 +45,10 @@
 
 ## Restore
 
-1. `start(plan)` records the plan (pinned `SourceRef`, files with a `required` flag) and runs; `prefetch` is asked for every pending path first.
-2. Required files download in plan order. The first failure ends the run as `Failed(error)`; optional files are untouched. Files already downloaded stay downloaded.
-3. Optional files download best-effort; a failure increments that file's attempts, and a file with `maxAttempts` (3) failures is skipped in later runs.
-4. The record is saved after every file. `Completed` when nothing is pending (stamped with completion time), else `Partial(pending)`.
-5. `resume()` revalidates first: `Found` whose source matches → continue from the record; otherwise `SourceChanged`, `SourceUnavailable`, `NotReady`, `NotAvailable`, `NeedsConsent`, or the mapped transport error. Done files are never downloaded again.
+1. `start(plan)` records the plan (pinned `SourceRef`, files with a `required` flag and an optional opaque `group`) and runs; `prefetch` is asked for every pending path first.
+2. Files are downloaded to their `toLocalPath`, then offered to the app's `RestorePlacement` one group at a time (a file with no group is its own group). `Placed` marks the files done; `Rejected` counts one attempt on each and stages them again next run. The default placement keeps files where they landed.
+3. Required groups go first, in plan order. The first download failure or rejection ends the run as `Failed(error)`, `PlacementRejected` for a rejection; optional files are untouched.
+4. Optional groups are best-effort. What landed of a group is placed even when a sibling failed; a file with `maxAttempts` (3) failures is skipped in later runs until `resume(resetAttempts = true)`.
+5. The record is saved after every download and every placement, with `downloaded` (local, not placed) separate from `done` (placed). Stopping is cancelling the caller; nothing else is needed.
+6. `RestoreProgress` reports files and groups; a report is sent only when a count changes. `Completed` when nothing is pending (stamped with completion time), else `Partial(pending)`.
+7. `resume()` revalidates first: `Found` whose source matches → continue from the record; otherwise `SourceChanged`, `SourceUnavailable`, `NotReady`, `NotAvailable`, `NeedsConsent`, or the mapped transport error. Done files are never downloaded again; a staged file still on disk is not fetched again either.
