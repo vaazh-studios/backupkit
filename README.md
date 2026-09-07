@@ -216,11 +216,11 @@ Every failure is a `CloudStorageException` carrying one `CloudError`:
   2026-09-02 and 2026-09-07), `ICloudStorage` (iPhone 16 Pro, 2026-09-05), `CloudKitStorage`
   (iPhone 16 Pro, 2026-09-07). `SyncEngine` ran every one of those passes. No store build carries
   BackupKit yet.
-- `RestoreEngine` is covered by unit tests only. Vocabloot restores through its own coordinator
-  (onboarding routing, per-word progress, doodles) and does not call `RestoreEngine` yet, so the
-  class is marked `@ExperimentalRestoreApi` until an app has run it on a device. The plan is to
-  grow it with generic hooks (a commit callback between required and optional files, grouped
-  progress, stop) so Vocabloot can drop its coordinator; nothing Vocabloot-specific will land in it.
+- `RestoreEngine` is covered by unit tests, and Vocabloot's development build restores its photos
+  through it as of 2026-09-07 (its own coordinator still owns onboarding routing and the metadata
+  commit). That build has not done a device restore yet, so the class stays `@ExperimentalRestoreApi`
+  until it has. Nothing Vocabloot-specific lives in it: files carry an opaque group and the app
+  supplies a `RestorePlacement`.
 - The sample app exercises `ICloudStorage` and `GoogleDriveStorage`. It has a `USE_CLOUDKIT`
   switch but has not run CloudKit on a device; its entitlements list iCloud Documents only.
 - Not included: scheduling, encryption, restore-into-your-model, any UI, Dropbox/OneDrive
