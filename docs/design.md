@@ -16,6 +16,13 @@ own and nothing on klibs.io or Maven Central covers it.
 > three-strike optional files, durable `RestoreRecord`, source revalidation on `resume()`) was added.
 > Plan: `docs/superpowers/plans/2026-09-06-backupkit-restore.md` in the Vocabloot repo; rules in
 > `docs/contract.md`.
+>
+> **Delta 2026-09-07:** `RestoreEngine` learned opaque file groups (`RestoreFile.group`), a
+> `RestorePlacement` hook that moves a group's staged files into app data (Placed/Rejected),
+> progress in groups as well as files, `downloaded` vs `done` per file, and
+> `resume(resetAttempts = true)` for an explicit retry past the attempt cap. The API is
+> `@ExperimentalRestoreApi` until it has run on a device. Plan:
+> `docs/superpowers/plans/2026-09-07-restore-engine-adoption.md` in the Vocabloot repo.
 
 ## 1. What it is
 
