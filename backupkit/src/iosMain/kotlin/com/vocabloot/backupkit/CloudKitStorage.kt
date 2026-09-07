@@ -29,6 +29,7 @@ import platform.CloudKit.CKFetchRecordZoneChangesOperation
 import platform.CloudKit.CKFetchRecordsOperation
 import platform.CloudKit.CKModifyRecordZonesOperation
 import platform.CloudKit.CKModifyRecordsOperation
+import platform.CloudKit.CKOperationConfiguration
 import platform.CloudKit.CKPartialErrorsByItemIDKey
 import platform.CloudKit.CKRecord
 import platform.CloudKit.CKRecordID
@@ -246,12 +247,14 @@ public class CloudKitStorage(
 
     override suspend fun writeFile(path: String, localPath: String, mimeType: String, existingRemoteId: String?): String? {
         val size = LocalFiles.fileSize(localPath) ?: throw CloudStorageException(CloudError.Transport, "CloudKit: missing local file $localPath")
-        save(path = path, filePath = localPath, size = size)
+        // Media are the slow saves: long-lived, so an upload already submitted completes even if
+        // the app is suspended or killed. The next list() sees the record through zone changes.
+        save(path = path, filePath = localPath, size = size, longLived = true)
         return null
     }
 
     /** One record per operation, `saveAllKeys`: a single writer, last write wins on purpose. */
-    private suspend fun save(path: String, filePath: String, size: Long) {
+    private suspend fun save(path: String, filePath: String, size: Long, longLived: Boolean = false) {
         ensureZone()
         val name = ZoneCheckpoint.recordName(path)
         val saved = execute<CKRecord> { cont ->
@@ -263,6 +266,7 @@ public class CloudKitStorage(
             CKModifyRecordsOperation(recordsToSave = listOf(record), recordIDsToDelete = null).apply {
                 savePolicy = CKRecordSaveAllKeys
                 qualityOfService = NSQualityOfServiceUserInitiated
+                if (longLived) configuration = CKOperationConfiguration().apply { setLongLived(true) }
                 modifyRecordsCompletionBlock = { savedRecords, _, error ->
                     if (error != null) cont.resumeWithException(mapped(error, name))
                     else cont.resume(savedRecords?.firstOrNull() as? CKRecord ?: record)
