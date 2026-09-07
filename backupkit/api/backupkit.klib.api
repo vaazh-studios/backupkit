@@ -6,6 +6,10 @@
 // - Show declarations: true
 
 // Library unique name: <com.vocabloot:backupkit>
+open annotation class com.vocabloot.backupkit/ExperimentalRestoreApi : kotlin/Annotation { // com.vocabloot.backupkit/ExperimentalRestoreApi|null[0]
+    constructor <init>() // com.vocabloot.backupkit/ExperimentalRestoreApi.<init>|<init>(){}[0]
+}
+
 final enum class com.vocabloot.backupkit/CloudError : kotlin/Enum<com.vocabloot.backupkit/CloudError> { // com.vocabloot.backupkit/CloudError|null[0]
     enum entry AuthRevoked // com.vocabloot.backupkit/CloudError.AuthRevoked|null[0]
     enum entry NeedsConsent // com.vocabloot.backupkit/CloudError.NeedsConsent|null[0]

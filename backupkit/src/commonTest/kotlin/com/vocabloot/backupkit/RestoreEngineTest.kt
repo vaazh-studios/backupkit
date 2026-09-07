@@ -1,3 +1,5 @@
+@file:OptIn(com.vocabloot.backupkit.ExperimentalRestoreApi::class)
+
 package com.vocabloot.backupkit
 
 import kotlinx.coroutines.test.runTest

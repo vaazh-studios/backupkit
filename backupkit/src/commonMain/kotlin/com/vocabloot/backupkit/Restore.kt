@@ -11,6 +11,18 @@ import kotlin.time.Clock
 import kotlin.time.ExperimentalTime
 
 /** Why a restore run stopped. */
+/**
+ * Marks the restore half of BackupKit: unit-tested, not yet run on a device by a
+ * shipping app. Opt in knowingly; the API may change in 0.2.0.
+ */
+@RequiresOptIn(
+    message = "RestoreEngine is unit-tested but has not been run on a device by a shipping app yet; its API may change.",
+    level = RequiresOptIn.Level.WARNING,
+)
+@Retention(AnnotationRetention.BINARY)
+@Target(AnnotationTarget.CLASS, AnnotationTarget.FUNCTION, AnnotationTarget.PROPERTY)
+public annotation class ExperimentalRestoreApi
+
 public enum class RestoreError {
     /** The remote set is no longer the one the plan was pinned to (another device or account wrote a different backup). */
     SourceChanged,
@@ -116,6 +128,7 @@ public class FileRestoreRecordStore(private val path: String) : RestoreRecordSto
  * your app has imported the files; the engine does not touch the hold itself.
  */
 @OptIn(ExperimentalTime::class)
+@ExperimentalRestoreApi
 public class RestoreEngine(
     private val engine: SyncEngine,
     private val storage: CloudStorage,

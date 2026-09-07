@@ -34,7 +34,7 @@ app-data folder on Android. No server, no account on your side, no OAuth client 
 | Sizes in `list()` | always known | -1 until downloaded | always known |
 | Reads | network fetch, batched by `prefetch` | placeholder download, one at a time | network fetch |
 | Single upload cap | 1 asset per save, container quota | container quota | 5 MB (multipart) |
-| Verified on a real device | Vocabloot device pass pending | shipped in Vocabloot 1.2 | shipped in Vocabloot 1.2, device pass 2026-09-02 |
+| Verified on a real device | Vocabloot development build, iPhone 16 Pro, 2026-09-07 | Vocabloot development build, iPhone 16 Pro, 2026-09-05 | Vocabloot development build, Pixel 7 Pro, 2026-09-02 and 2026-09-07 |
 
 Which iOS transport? **CloudKit** for app data the user never opens as files: saves complete when Apple's server has the record, reads are definite, no placeholder files. **iCloud Drive** when the files should also be visible in the Files app or another app reads the same container. Both are the user's own iCloud storage.
 
@@ -42,7 +42,7 @@ Targets: `android`, `iosArm64`, `iosSimulatorArm64`, `iosX64`. Kotlin 2.3.20, mi
 
 ## Who's using it
 
-- [Vocabloot](https://vocabloot.com) ([App Store](https://apps.apple.com/app/id6792888619), [Google Play](https://play.google.com/store/apps/details?id=com.tntstudios.snaplingo)): a photo-to-vocabulary app whose wordbook, photos and doodles mirror through this exact code. BackupKit is that code, extracted.
+- [Vocabloot](https://vocabloot.com) ([App Store](https://apps.apple.com/app/id6792888619), [Google Play](https://play.google.com/store/apps/details?id=com.tntstudios.snaplingo)): a photo-to-vocabulary app whose wordbook, photos and doodles mirror through this exact code. BackupKit is that code, extracted. As of 2026-09-07 it runs in Vocabloot's development builds on both platforms; the next Vocabloot release is the first store build that carries it.
 
 Using BackupKit? Open a PR and add yourself.
 
@@ -204,8 +204,17 @@ Every failure is a `CloudStorageException` carrying one `CloudError`:
 - Drive: multipart uploads are capped at 5 MB per file. Resumable uploads are on the roadmap.
 - Drive app-data counts against the user's Drive quota (Android Auto Backup does not).
 - iCloud on the simulator needs an iCloud login on the simulator.
-- Verified on real devices: the Android transport, in Vocabloot (September 2026). The iOS transport
-  ships in Vocabloot too; the sample app on a device is the reference check.
+- Verified on real devices, in Vocabloot's development builds: `GoogleDriveStorage` (Pixel 7 Pro,
+  2026-09-02 and 2026-09-07), `ICloudStorage` (iPhone 16 Pro, 2026-09-05), `CloudKitStorage`
+  (iPhone 16 Pro, 2026-09-07). `SyncEngine` ran every one of those passes. No store build carries
+  BackupKit yet.
+- `RestoreEngine` is covered by unit tests only. Vocabloot restores through its own coordinator
+  (onboarding routing, per-word progress, doodles) and does not call `RestoreEngine` yet, so the
+  class is marked `@ExperimentalRestoreApi` until an app has run it on a device. The plan is to
+  grow it with generic hooks (a commit callback between required and optional files, grouped
+  progress, stop) so Vocabloot can drop its coordinator; nothing Vocabloot-specific will land in it.
+- The sample app exercises `ICloudStorage` and `GoogleDriveStorage`. It has a `USE_CLOUDKIT`
+  switch but has not run CloudKit on a device; its entitlements list iCloud Documents only.
 - Not included: scheduling, encryption, restore-into-your-model, any UI, Dropbox/OneDrive
   (see [CloudBridge](https://github.com/jacobras/CloudBridge) for those).
 

@@ -1,3 +1,5 @@
+@file:OptIn(com.vocabloot.backupkit.ExperimentalRestoreApi::class)
+
 package com.vocabloot.backupkit.sample
 
 import com.vocabloot.backupkit.FileSyncStateStore
