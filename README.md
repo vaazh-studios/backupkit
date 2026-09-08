@@ -42,7 +42,7 @@ Targets: `android`, `iosArm64`, `iosSimulatorArm64`, `iosX64`. Kotlin 2.3.20, mi
 
 ## Who's using it
 
-- [Vocabloot](https://vocabloot.com) ([App Store](https://apps.apple.com/app/id6792888619), [Google Play](https://play.google.com/store/apps/details?id=com.tntstudios.snaplingo)): a photo-to-vocabulary app whose wordbook, photos and doodles mirror through this exact code. BackupKit is that code, extracted. As of 2026-09-07 it runs in Vocabloot's development builds on both platforms; the next Vocabloot release is the first store build that carries it.
+- [Vocabloot](https://vocabloot.com) ([App Store](https://apps.apple.com/app/id6792888619), [Google Play](https://play.google.com/store/apps/details?id=com.tntstudios.snaplingo)): a photo-to-vocabulary app whose wordbook, photos and doodles mirror through this exact code. BackupKit is that code, extracted. Vocabloot's development builds consume the published `com.vocabloot:backupkit:0.1.0` on both platforms as of 2026-09-08; the next Vocabloot release is the first store build that carries it.
 
 Using BackupKit? Open a PR and add yourself.
 
@@ -56,31 +56,20 @@ commonMain.dependencies {
 
 Then do the platform setup once: [iOS](docs/setup-ios.md) (an entitlement), [Android](docs/setup-android.md) (a Google Cloud OAuth client).
 
-## Try it before the first release
+## Working from source
 
-`0.1.0` is being published to Maven Central. Until it resolves, either of these works:
-
-**Local Maven.** Clone, publish to `~/.m2`, and add `mavenLocal()` to your repositories:
-
-```bash
-git clone https://github.com/vaazh-studios/backupkit.git
-cd backupkit && ./gradlew :backupkit:publishToMavenLocal
-```
-
-**Composite build.** Point your `settings.gradle.kts` at the checkout and depend on it as if it were published:
+`0.1.0` is on Maven Central. To hack on the library and your app together, point your `settings.gradle.kts` at a checkout; the composite build substitutes the coordinate with the source project:
 
 ```kotlin
 includeBuild("../backupkit")
 ```
 
-**Run the sample.** A Compose Multiplatform notes app that adds, deletes, syncs, and offers a restore:
+Or publish to `~/.m2` and add `mavenLocal()` to your repositories:
 
 ```bash
-./gradlew :sample:androidApp:installDebug          # Android device or emulator
-brew install xcodegen && cd sample/iosApp && xcodegen generate && open iosApp.xcodeproj   # iOS: set your team, run on a device signed into iCloud
+git clone https://github.com/vaazh-studios/backupkit.git
+cd backupkit && ./gradlew :backupkit:publishToMavenLocal
 ```
-
-The sample needs its own iCloud container (`iCloud.com.vocabloot.backupkit.sample`) and, on Android, an OAuth client for its package and your signing SHA-1; the setup guides walk through both. Source: [`sample/shared`](sample/shared/src/commonMain/kotlin/com/vocabloot/backupkit/sample), [`sample/androidApp`](sample/androidApp), [`sample/iosApp`](sample/iosApp).
 
 ## Quickstart
 
