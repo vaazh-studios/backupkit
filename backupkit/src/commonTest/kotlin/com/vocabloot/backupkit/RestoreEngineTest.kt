@@ -2,6 +2,10 @@
 
 package com.vocabloot.backupkit
 
+import com.vocabloot.backupkit.test.FakeCloudStorage
+import com.vocabloot.backupkit.test.MemoryRestoreRecordStore
+import com.vocabloot.backupkit.test.MemorySyncStateStore
+
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals

@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.0 (unreleased)
+
+- New artifact `com.vocabloot:backupkit-test`: `FakeCloudStorage`, `MemorySyncStateStore`, `MemoryRestoreRecordStore`, the fakes the library's own tests run on, so an app can unit-test its sync and restore code without a cloud.
+- Library code unchanged from 0.1.0; the public API of `backupkit` is identical.
+- README rewritten as a landing page; long-form guides moved to the docs site.
+
 ## 0.1.0 (2026-09-06)
 
 - `CloudStorage`: filesystem-style transport with `ICloudStorage` (iOS) and `GoogleDriveStorage` (Android, app-data folder, silent Play Services token, `DriveConsent` helper).

@@ -1,33 +1,49 @@
-package com.vocabloot.backupkit
+package com.vocabloot.backupkit.test
 
-/** In-memory [CloudStorage]. [readLocal] resolves the local paths the engine passes to [writeFile]. */
-class FakeCloudStorage(
+import com.vocabloot.backupkit.CloudAvailability
+import com.vocabloot.backupkit.CloudError
+import com.vocabloot.backupkit.CloudProvider
+import com.vocabloot.backupkit.CloudStorage
+import com.vocabloot.backupkit.CloudStorageException
+import com.vocabloot.backupkit.RemoteFile
+
+/**
+ * In-memory [CloudStorage] for tests. Every failure mode the engines react to can be switched on:
+ * listing, put, read, download and delete failures, an availability or identity change, and Drive-style
+ * remote ids. [readLocal] resolves the local paths the engines pass to [writeFile]; [writeLocal] receives
+ * downloads. The logs record every call so a test can assert order and count.
+ */
+public class FakeCloudStorage(
     override val provider: CloudProvider = CloudProvider.ICloud,
     private val readLocal: (String) -> ByteArray?,
     private val writeLocal: (String, ByteArray) -> Unit,
 ) : CloudStorage {
-    val remote = linkedMapOf<String, ByteArray>()
+    /** Remote path to bytes, in first-write order. */
+    public val remote: MutableMap<String, ByteArray> = linkedMapOf()
     private val ids = mutableMapOf<String, String>()
     private var nextId = 1
 
-    var availability: CloudAvailability = CloudAvailability.Available
-    var identity: String? = "identity-A"
-    var assignsRemoteIds: Boolean = false
-    var failPutsContaining: String? = null
-    var failError: CloudError = CloudError.Transport
-    var failDeletes: Boolean = false
-    var failListing: CloudError? = null
-    var failReadsContaining: String? = null
-    var failDownloadsContaining: String? = null
-    val prefetchLog = mutableListOf<List<String>>()
-    val downloadLog = mutableListOf<String>()
+    public var availability: CloudAvailability = CloudAvailability.Available
+    public var identity: String? = "identity-A"
+    /** Drive semantics: a create mints a fresh id, an update keeps it. */
+    public var assignsRemoteIds: Boolean = false
+    public var failPutsContaining: String? = null
+    public var failError: CloudError = CloudError.Transport
+    public var failDeletes: Boolean = false
+    public var failListing: CloudError? = null
+    public var failReadsContaining: String? = null
+    public var failDownloadsContaining: String? = null
 
-    val putLog = mutableListOf<String>()
-    var onPut: (String) -> Unit = {}
-    val deleteLog = mutableListOf<String>()
-    var listCalls = 0
+    public val prefetchLog: MutableList<List<String>> = mutableListOf()
+    public val downloadLog: MutableList<String> = mutableListOf()
+    public val putLog: MutableList<String> = mutableListOf()
+    public val deleteLog: MutableList<String> = mutableListOf()
+    /** Called with the path on every successful put, before the bytes land; a hook for mid-run interference. */
+    public var onPut: (String) -> Unit = {}
+    public var listCalls: Int = 0
 
     override suspend fun availability(): CloudAvailability = availability
+
     override suspend fun identityKey(): String? = identity
 
     override suspend fun list(): List<RemoteFile> {
@@ -47,7 +63,6 @@ class FakeCloudStorage(
         failPutsContaining?.let { if (path.contains(it)) throw CloudStorageException(failError, "put failed: $path") }
         putLog += path
         onPut(path)
-        // Drive semantics: a CREATE (path not present) mints a fresh id; an update keeps it.
         val created = !remote.containsKey(path)
         remote[path] = bytes
         if (!assignsRemoteIds) return null
@@ -60,7 +75,9 @@ class FakeCloudStorage(
         return remote[path]
     }
 
-    override suspend fun prefetch(paths: List<String>) { prefetchLog += paths }
+    override suspend fun prefetch(paths: List<String>) {
+        prefetchLog += paths
+    }
 
     override suspend fun downloadFile(path: String, toLocalPath: String, remoteId: String?) {
         failDownloadsContaining?.let { if (path.contains(it)) throw CloudStorageException(CloudError.Transport, "download failed: $path") }

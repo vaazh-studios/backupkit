@@ -1,0 +1,96 @@
+// Klib ABI Dump
+// Targets: [iosArm64, iosSimulatorArm64, iosX64]
+// Rendering settings:
+// - Signature version: 2
+// - Show manifest properties: true
+// - Show declarations: true
+
+// Library unique name: <com.vocabloot:backupkit-test>
+final class com.vocabloot.backupkit.test/FakeCloudStorage : com.vocabloot.backupkit/CloudStorage { // com.vocabloot.backupkit.test/FakeCloudStorage|null[0]
+    constructor <init>(com.vocabloot.backupkit/CloudProvider = ..., kotlin/Function1<kotlin/String, kotlin/ByteArray?>, kotlin/Function2<kotlin/String, kotlin/ByteArray, kotlin/Unit>) // com.vocabloot.backupkit.test/FakeCloudStorage.<init>|<init>(com.vocabloot.backupkit.CloudProvider;kotlin.Function1<kotlin.String,kotlin.ByteArray?>;kotlin.Function2<kotlin.String,kotlin.ByteArray,kotlin.Unit>){}[0]
+
+    final val deleteLog // com.vocabloot.backupkit.test/FakeCloudStorage.deleteLog|{}deleteLog[0]
+        final fun <get-deleteLog>(): kotlin.collections/MutableList<kotlin/String> // com.vocabloot.backupkit.test/FakeCloudStorage.deleteLog.<get-deleteLog>|<get-deleteLog>(){}[0]
+    final val downloadLog // com.vocabloot.backupkit.test/FakeCloudStorage.downloadLog|{}downloadLog[0]
+        final fun <get-downloadLog>(): kotlin.collections/MutableList<kotlin/String> // com.vocabloot.backupkit.test/FakeCloudStorage.downloadLog.<get-downloadLog>|<get-downloadLog>(){}[0]
+    final val prefetchLog // com.vocabloot.backupkit.test/FakeCloudStorage.prefetchLog|{}prefetchLog[0]
+        final fun <get-prefetchLog>(): kotlin.collections/MutableList<kotlin.collections/List<kotlin/String>> // com.vocabloot.backupkit.test/FakeCloudStorage.prefetchLog.<get-prefetchLog>|<get-prefetchLog>(){}[0]
+    final val provider // com.vocabloot.backupkit.test/FakeCloudStorage.provider|{}provider[0]
+        final fun <get-provider>(): com.vocabloot.backupkit/CloudProvider // com.vocabloot.backupkit.test/FakeCloudStorage.provider.<get-provider>|<get-provider>(){}[0]
+    final val putLog // com.vocabloot.backupkit.test/FakeCloudStorage.putLog|{}putLog[0]
+        final fun <get-putLog>(): kotlin.collections/MutableList<kotlin/String> // com.vocabloot.backupkit.test/FakeCloudStorage.putLog.<get-putLog>|<get-putLog>(){}[0]
+    final val remote // com.vocabloot.backupkit.test/FakeCloudStorage.remote|{}remote[0]
+        final fun <get-remote>(): kotlin.collections/MutableMap<kotlin/String, kotlin/ByteArray> // com.vocabloot.backupkit.test/FakeCloudStorage.remote.<get-remote>|<get-remote>(){}[0]
+
+    final var assignsRemoteIds // com.vocabloot.backupkit.test/FakeCloudStorage.assignsRemoteIds|{}assignsRemoteIds[0]
+        final fun <get-assignsRemoteIds>(): kotlin/Boolean // com.vocabloot.backupkit.test/FakeCloudStorage.assignsRemoteIds.<get-assignsRemoteIds>|<get-assignsRemoteIds>(){}[0]
+        final fun <set-assignsRemoteIds>(kotlin/Boolean) // com.vocabloot.backupkit.test/FakeCloudStorage.assignsRemoteIds.<set-assignsRemoteIds>|<set-assignsRemoteIds>(kotlin.Boolean){}[0]
+    final var availability // com.vocabloot.backupkit.test/FakeCloudStorage.availability|{}availability[0]
+        final fun <get-availability>(): com.vocabloot.backupkit/CloudAvailability // com.vocabloot.backupkit.test/FakeCloudStorage.availability.<get-availability>|<get-availability>(){}[0]
+        final fun <set-availability>(com.vocabloot.backupkit/CloudAvailability) // com.vocabloot.backupkit.test/FakeCloudStorage.availability.<set-availability>|<set-availability>(com.vocabloot.backupkit.CloudAvailability){}[0]
+    final var failDeletes // com.vocabloot.backupkit.test/FakeCloudStorage.failDeletes|{}failDeletes[0]
+        final fun <get-failDeletes>(): kotlin/Boolean // com.vocabloot.backupkit.test/FakeCloudStorage.failDeletes.<get-failDeletes>|<get-failDeletes>(){}[0]
+        final fun <set-failDeletes>(kotlin/Boolean) // com.vocabloot.backupkit.test/FakeCloudStorage.failDeletes.<set-failDeletes>|<set-failDeletes>(kotlin.Boolean){}[0]
+    final var failDownloadsContaining // com.vocabloot.backupkit.test/FakeCloudStorage.failDownloadsContaining|{}failDownloadsContaining[0]
+        final fun <get-failDownloadsContaining>(): kotlin/String? // com.vocabloot.backupkit.test/FakeCloudStorage.failDownloadsContaining.<get-failDownloadsContaining>|<get-failDownloadsContaining>(){}[0]
+        final fun <set-failDownloadsContaining>(kotlin/String?) // com.vocabloot.backupkit.test/FakeCloudStorage.failDownloadsContaining.<set-failDownloadsContaining>|<set-failDownloadsContaining>(kotlin.String?){}[0]
+    final var failError // com.vocabloot.backupkit.test/FakeCloudStorage.failError|{}failError[0]
+        final fun <get-failError>(): com.vocabloot.backupkit/CloudError // com.vocabloot.backupkit.test/FakeCloudStorage.failError.<get-failError>|<get-failError>(){}[0]
+        final fun <set-failError>(com.vocabloot.backupkit/CloudError) // com.vocabloot.backupkit.test/FakeCloudStorage.failError.<set-failError>|<set-failError>(com.vocabloot.backupkit.CloudError){}[0]
+    final var failListing // com.vocabloot.backupkit.test/FakeCloudStorage.failListing|{}failListing[0]
+        final fun <get-failListing>(): com.vocabloot.backupkit/CloudError? // com.vocabloot.backupkit.test/FakeCloudStorage.failListing.<get-failListing>|<get-failListing>(){}[0]
+        final fun <set-failListing>(com.vocabloot.backupkit/CloudError?) // com.vocabloot.backupkit.test/FakeCloudStorage.failListing.<set-failListing>|<set-failListing>(com.vocabloot.backupkit.CloudError?){}[0]
+    final var failPutsContaining // com.vocabloot.backupkit.test/FakeCloudStorage.failPutsContaining|{}failPutsContaining[0]
+        final fun <get-failPutsContaining>(): kotlin/String? // com.vocabloot.backupkit.test/FakeCloudStorage.failPutsContaining.<get-failPutsContaining>|<get-failPutsContaining>(){}[0]
+        final fun <set-failPutsContaining>(kotlin/String?) // com.vocabloot.backupkit.test/FakeCloudStorage.failPutsContaining.<set-failPutsContaining>|<set-failPutsContaining>(kotlin.String?){}[0]
+    final var failReadsContaining // com.vocabloot.backupkit.test/FakeCloudStorage.failReadsContaining|{}failReadsContaining[0]
+        final fun <get-failReadsContaining>(): kotlin/String? // com.vocabloot.backupkit.test/FakeCloudStorage.failReadsContaining.<get-failReadsContaining>|<get-failReadsContaining>(){}[0]
+        final fun <set-failReadsContaining>(kotlin/String?) // com.vocabloot.backupkit.test/FakeCloudStorage.failReadsContaining.<set-failReadsContaining>|<set-failReadsContaining>(kotlin.String?){}[0]
+    final var identity // com.vocabloot.backupkit.test/FakeCloudStorage.identity|{}identity[0]
+        final fun <get-identity>(): kotlin/String? // com.vocabloot.backupkit.test/FakeCloudStorage.identity.<get-identity>|<get-identity>(){}[0]
+        final fun <set-identity>(kotlin/String?) // com.vocabloot.backupkit.test/FakeCloudStorage.identity.<set-identity>|<set-identity>(kotlin.String?){}[0]
+    final var listCalls // com.vocabloot.backupkit.test/FakeCloudStorage.listCalls|{}listCalls[0]
+        final fun <get-listCalls>(): kotlin/Int // com.vocabloot.backupkit.test/FakeCloudStorage.listCalls.<get-listCalls>|<get-listCalls>(){}[0]
+        final fun <set-listCalls>(kotlin/Int) // com.vocabloot.backupkit.test/FakeCloudStorage.listCalls.<set-listCalls>|<set-listCalls>(kotlin.Int){}[0]
+    final var onPut // com.vocabloot.backupkit.test/FakeCloudStorage.onPut|{}onPut[0]
+        final fun <get-onPut>(): kotlin/Function1<kotlin/String, kotlin/Unit> // com.vocabloot.backupkit.test/FakeCloudStorage.onPut.<get-onPut>|<get-onPut>(){}[0]
+        final fun <set-onPut>(kotlin/Function1<kotlin/String, kotlin/Unit>) // com.vocabloot.backupkit.test/FakeCloudStorage.onPut.<set-onPut>|<set-onPut>(kotlin.Function1<kotlin.String,kotlin.Unit>){}[0]
+
+    final suspend fun availability(): com.vocabloot.backupkit/CloudAvailability // com.vocabloot.backupkit.test/FakeCloudStorage.availability|availability(){}[0]
+    final suspend fun delete(kotlin/String, kotlin/String?) // com.vocabloot.backupkit.test/FakeCloudStorage.delete|delete(kotlin.String;kotlin.String?){}[0]
+    final suspend fun downloadFile(kotlin/String, kotlin/String, kotlin/String?) // com.vocabloot.backupkit.test/FakeCloudStorage.downloadFile|downloadFile(kotlin.String;kotlin.String;kotlin.String?){}[0]
+    final suspend fun exists(kotlin/String): kotlin/Boolean // com.vocabloot.backupkit.test/FakeCloudStorage.exists|exists(kotlin.String){}[0]
+    final suspend fun identityKey(): kotlin/String? // com.vocabloot.backupkit.test/FakeCloudStorage.identityKey|identityKey(){}[0]
+    final suspend fun list(): kotlin.collections/List<com.vocabloot.backupkit/RemoteFile> // com.vocabloot.backupkit.test/FakeCloudStorage.list|list(){}[0]
+    final suspend fun prefetch(kotlin.collections/List<kotlin/String>) // com.vocabloot.backupkit.test/FakeCloudStorage.prefetch|prefetch(kotlin.collections.List<kotlin.String>){}[0]
+    final suspend fun readBytes(kotlin/String, kotlin/String?): kotlin/ByteArray? // com.vocabloot.backupkit.test/FakeCloudStorage.readBytes|readBytes(kotlin.String;kotlin.String?){}[0]
+    final suspend fun writeBytes(kotlin/String, kotlin/ByteArray, kotlin/String, kotlin/String?): kotlin/String? // com.vocabloot.backupkit.test/FakeCloudStorage.writeBytes|writeBytes(kotlin.String;kotlin.ByteArray;kotlin.String;kotlin.String?){}[0]
+    final suspend fun writeFile(kotlin/String, kotlin/String, kotlin/String, kotlin/String?): kotlin/String? // com.vocabloot.backupkit.test/FakeCloudStorage.writeFile|writeFile(kotlin.String;kotlin.String;kotlin.String;kotlin.String?){}[0]
+}
+
+final class com.vocabloot.backupkit.test/MemoryRestoreRecordStore : com.vocabloot.backupkit/RestoreRecordStore { // com.vocabloot.backupkit.test/MemoryRestoreRecordStore|null[0]
+    constructor <init>() // com.vocabloot.backupkit.test/MemoryRestoreRecordStore.<init>|<init>(){}[0]
+
+    final var record // com.vocabloot.backupkit.test/MemoryRestoreRecordStore.record|{}record[0]
+        final fun <get-record>(): com.vocabloot.backupkit/RestoreRecord? // com.vocabloot.backupkit.test/MemoryRestoreRecordStore.record.<get-record>|<get-record>(){}[0]
+        final fun <set-record>(com.vocabloot.backupkit/RestoreRecord?) // com.vocabloot.backupkit.test/MemoryRestoreRecordStore.record.<set-record>|<set-record>(com.vocabloot.backupkit.RestoreRecord?){}[0]
+    final var saveCount // com.vocabloot.backupkit.test/MemoryRestoreRecordStore.saveCount|{}saveCount[0]
+        final fun <get-saveCount>(): kotlin/Int // com.vocabloot.backupkit.test/MemoryRestoreRecordStore.saveCount.<get-saveCount>|<get-saveCount>(){}[0]
+        final fun <set-saveCount>(kotlin/Int) // com.vocabloot.backupkit.test/MemoryRestoreRecordStore.saveCount.<set-saveCount>|<set-saveCount>(kotlin.Int){}[0]
+
+    final fun clear() // com.vocabloot.backupkit.test/MemoryRestoreRecordStore.clear|clear(){}[0]
+    final fun load(): com.vocabloot.backupkit/RestoreRecord? // com.vocabloot.backupkit.test/MemoryRestoreRecordStore.load|load(){}[0]
+    final fun save(com.vocabloot.backupkit/RestoreRecord) // com.vocabloot.backupkit.test/MemoryRestoreRecordStore.save|save(com.vocabloot.backupkit.RestoreRecord){}[0]
+}
+
+final class com.vocabloot.backupkit.test/MemorySyncStateStore : com.vocabloot.backupkit/SyncStateStore { // com.vocabloot.backupkit.test/MemorySyncStateStore|null[0]
+    constructor <init>() // com.vocabloot.backupkit.test/MemorySyncStateStore.<init>|<init>(){}[0]
+
+    final var state // com.vocabloot.backupkit.test/MemorySyncStateStore.state|{}state[0]
+        final fun <get-state>(): com.vocabloot.backupkit/SyncState? // com.vocabloot.backupkit.test/MemorySyncStateStore.state.<get-state>|<get-state>(){}[0]
+        final fun <set-state>(com.vocabloot.backupkit/SyncState?) // com.vocabloot.backupkit.test/MemorySyncStateStore.state.<set-state>|<set-state>(com.vocabloot.backupkit.SyncState?){}[0]
+
+    final fun clear() // com.vocabloot.backupkit.test/MemorySyncStateStore.clear|clear(){}[0]
+    final fun load(): com.vocabloot.backupkit/SyncState // com.vocabloot.backupkit.test/MemorySyncStateStore.load|load(){}[0]
+    final fun save(com.vocabloot.backupkit/SyncState) // com.vocabloot.backupkit.test/MemorySyncStateStore.save|save(com.vocabloot.backupkit.SyncState){}[0]
+}

@@ -3,7 +3,6 @@ import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 plugins {
     alias(libs.plugins.kotlin.multiplatform)
     alias(libs.plugins.android.kmp.library)
-    alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.maven.publish)
     alias(libs.plugins.bcv)
     alias(libs.plugins.dokka)
@@ -17,7 +16,7 @@ kotlin {
     applyDefaultHierarchyTemplate()
 
     androidLibrary {
-        namespace = "com.vocabloot.backupkit"
+        namespace = "com.vocabloot.backupkit.test"
         compileSdk = 36
         minSdk = 24
         compilerOptions { jvmTarget = JvmTarget.JVM_21 }
@@ -30,22 +29,8 @@ kotlin {
 
     sourceSets {
         commonMain.dependencies {
+            api(project(":backupkit"))
             api(libs.coroutines.core)
-            implementation(libs.serialization.json)
-            implementation(libs.kotlinx.io.core)
-        }
-        commonTest.dependencies {
-            implementation(project(":backupkit-test"))
-            implementation(kotlin("test"))
-            implementation(libs.coroutines.test)
-        }
-        androidMain.dependencies {
-            api(libs.ktor.client.core)
-            implementation(libs.ktor.client.okhttp)
-            implementation(libs.play.services.auth)
-        }
-        getByName("androidHostTest").dependencies {
-            implementation(libs.ktor.client.mock)
         }
     }
 }
@@ -53,10 +38,10 @@ kotlin {
 mavenPublishing {
     publishToMavenCentral()
     signAllPublications()
-    coordinates(group.toString(), "backupkit", version.toString())
+    coordinates(group.toString(), "backupkit-test", version.toString())
     pom {
-        name = "BackupKit"
-        description = "Kotlin Multiplatform backup into the user's own cloud: iCloud Drive on iOS, Google Drive app-data on Android. No server, no accounts."
+        name = "BackupKit Test"
+        description = "In-memory fakes for testing code built on BackupKit: FakeCloudStorage, MemorySyncStateStore, MemoryRestoreRecordStore."
         inceptionYear = "2026"
         url = "https://github.com/vaazh-studios/backupkit"
         licenses {
@@ -87,12 +72,11 @@ apiValidation {
 }
 
 dokka {
-    moduleName.set("BackupKit")
+    moduleName.set("BackupKit Test")
     dokkaSourceSets.configureEach {
-        includes.from("Module.md")
-        sourceLink {
+                sourceLink {
             localDirectory.set(file("src"))
-            remoteUrl("https://github.com/vaazh-studios/backupkit/tree/main/backupkit/src")
+            remoteUrl("https://github.com/vaazh-studios/backupkit/tree/main/backupkit-test/src")
             remoteLineSuffix.set("#L")
         }
     }
