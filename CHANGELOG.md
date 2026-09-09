@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.2.0 (unreleased)
+## 0.2.0 (2026-09-09)
 
 - New artifact `com.vocabloot:backupkit-test`: `FakeCloudStorage`, `MemorySyncStateStore`, `MemoryRestoreRecordStore`, the fakes the library's own tests run on, so an app can unit-test its sync and restore code without a cloud.
 - Library code unchanged from 0.1.0; the public API of `backupkit` is identical.
