@@ -1,9 +1,8 @@
 # BackupKit
 
-![BackupKit: your app backs up into the user's own Google Drive or iCloud Drive, no server](docs/assets/hero.png)
+![BackupKit: your app backs up into the user's own Google Drive or iCloud, no server](docs/assets/hero.png)
 
-Kotlin Multiplatform backup into the user's **own** cloud: iCloud Drive on iOS, the Google Drive
-app-data folder on Android. No server, no account on your side, no OAuth client setup on iOS.
+Kotlin Multiplatform backup into the user's **own** cloud: iCloud on iOS (CloudKit or iCloud Drive), the Google Drive app-data folder on Android. No server, no account on your side, no OAuth client setup on iOS.
 
 ![Android](https://img.shields.io/badge/Android-3DDC84?logo=android&logoColor=white)
 ![iOS](https://img.shields.io/badge/iOS-000000?logo=apple&logoColor=white)
@@ -11,85 +10,57 @@ app-data folder on Android. No server, no account on your side, no OAuth client 
 [![CI](https://github.com/vaazh-studios/backupkit/actions/workflows/ci.yml/badge.svg)](https://github.com/vaazh-studios/backupkit/actions/workflows/ci.yml)
 [![Kotlin](https://img.shields.io/badge/Kotlin-2.3.20-7F52FF?logo=kotlin&logoColor=white)](https://kotlinlang.org)
 [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
-[![API reference](https://img.shields.io/badge/API-reference-blue)](https://vaazh-studios.github.io/backupkit/)
+[![Docs](https://img.shields.io/badge/Docs-site-blue)](https://vaazh-studios.github.io/backupkit/)
+[![Discussions](https://img.shields.io/badge/GitHub-Discussions-2f7a4e)](https://github.com/vaazh-studios/backupkit/discussions)
+
+- [Why](#why) · [Features](#features) · [BackupKit 101](#backupkit-101) · [A more advanced example](#a-more-advanced-example)
+- [Support matrix](#support-matrix) · [Requirements](#requirements) · [Samples](#samples) · [Testing](#testing)
+- [Who's using it](#whos-using-it) · [Communication](#communication) · [Limits and honesty](#limits-and-honesty) · [Compared with](#compared-with)
+
+## Why
+
+Every app with a wordbook or a journal eventually needs "a new phone should not lose my stuff". A backend for that means accounts, hosting and a privacy policy that says you hold user data. The user already pays for a cloud. BackupKit puts the files there, invisible to them, readable only by your app, with an engine that keeps the mirror correct across kills, retries and account switches.
 
 ## Features
 
-- **The user's cloud, not yours.** Files land in the app's private iCloud container or Drive's hidden `appDataFolder` (the one WhatsApp uses). Nothing to host, no accounts to run.
-- **Zero code on iOS, one tap on Android.** The iCloud entitlement is the whole iOS setup, for CloudKit or iCloud Drive; on Android the user sees Google's permission dialog once, then tokens are silent.
-- **Complete-or-absent sync.** `SyncEngine` diffs, orders uploads so a marker file lands last, saves state after every step, resumes after a kill, and detects an account switch instead of merging two accounts.
-- **Restore that survives a kill.** A typed probe for the offer, a write hold so sync never clobbers a half-restored device, and a resumable download with a commit boundary, per-file attempts and source revalidation.
-- **Typed errors.** Every failure is one of seven `CloudError` values; nothing platform-specific leaks out.
-- **Small.** About 1,200 lines. Coroutines, kotlinx-serialization and kotlinx-io in common code; Ktor and Play Services Identity on Android only; iOS links no HTTP client. No DI framework, no Compose, no Firebase.
+- **The user's cloud, not yours.** App-private iCloud container or Drive's hidden `appDataFolder` (the one WhatsApp uses).
+- **Zero code on iOS, one tap on Android.** The iCloud entitlement is the iOS setup; Android shows Google's dialog once.
+- **Complete-or-absent sync.** Diffs, uploads the marker last, saves state after every step, resumes after a kill, refuses to merge two accounts.
+- **Restore that survives a kill.** Typed probe, write hold, resumable download with a commit boundary and per-file attempts.
+- **Typed errors.** Seven `CloudError` values, nothing platform-specific leaks out.
+- **Small.** About 1,200 lines. No DI framework, no Compose, no Firebase; iOS links no HTTP client.
 
-## Support matrix
-
-| | CloudKit (iOS) | iCloud Drive (iOS) | Google Drive app-data (Android) |
-|---|---|---|---|
-| Transport `CloudStorage` | ✅ `CloudKitStorage` | ✅ `ICloudStorage` | ✅ `GoogleDriveStorage` |
-| Sync `SyncEngine` | ✅ | ✅ | ✅ |
-| Auth | entitlement only | entitlement only | silent token, `DriveConsent` for the one-time dialog |
-| Nested paths | ✅ (record name encodes `/`) | ✅ | flat folder, path used as file name |
-| File ids | – | – | `RemoteFile.remoteId` |
-| Sizes in `list()` | always known | -1 until downloaded | always known |
-| Reads | network fetch, batched by `prefetch` | placeholder download, one at a time | network fetch |
-| Single upload cap | 1 asset per save, container quota | container quota | 5 MB (multipart) |
-| Verified on a real device | Vocabloot development build, iPhone 16 Pro, 2026-09-07 | Vocabloot development build, iPhone 16 Pro, 2026-09-05 | Vocabloot development build, Pixel 7 Pro, 2026-09-02 and 2026-09-07 |
-
-Which iOS transport? **CloudKit** for app data the user never opens as files: saves complete when Apple's server has the record, reads are definite, no placeholder files. **iCloud Drive** when the files should also be visible in the Files app or another app reads the same container. Both are the user's own iCloud storage.
-
-Targets: `android`, `iosArm64`, `iosSimulatorArm64`, `iosX64`. Kotlin 2.3.20, minSdk 24, iOS 16+.
-
-## Who's using it
-
-- [Vocabloot](https://vocabloot.com) ([App Store](https://apps.apple.com/app/id6792888619), [Google Play](https://play.google.com/store/apps/details?id=com.tntstudios.snaplingo)): a photo-to-vocabulary app whose wordbook, photos and doodles mirror through this exact code. BackupKit is that code, extracted. Vocabloot's development builds consume the published `com.vocabloot:backupkit:0.1.0` on both platforms as of 2026-09-08; the next Vocabloot release is the first store build that carries it.
-
-Using BackupKit? Open a PR and add yourself.
-
-## Install
+## BackupKit 101
 
 ```kotlin
-commonMain.dependencies {
-    implementation("com.vocabloot:backupkit:0.1.0")
-}
+// libs.versions.toml            backupkit = { module = "com.vocabloot:backupkit", version = "0.2.0" }
+// build.gradle.kts (shared)     commonMain.dependencies { implementation(libs.backupkit) }
 ```
 
-Then do the platform setup once: [iOS](docs/setup-ios.md) (an entitlement), [Android](docs/setup-android.md) (a Google Cloud OAuth client).
-
-## Working from source
-
-`0.1.0` is on Maven Central. To hack on the library and your app together, point your `settings.gradle.kts` at a checkout; the composite build substitutes the coordinate with the source project:
+One entitlement on iOS, one OAuth client on Android ([setup](https://vaazh-studios.github.io/backupkit/setup-ios/)), then:
 
 ```kotlin
-includeBuild("../backupkit")
-```
+// iOS (iosMain)                                  // Android (androidMain)
+val storage: CloudStorage = CloudKitStorage(       val storage: CloudStorage = GoogleDriveStorage(context)
+    checkpointPath = "$dir/ck-checkpoint.json",
+    cacheDirectory = "$dir/ck-cache",
+)                                                  // or ICloudStorage() for files the user may open in Files
 
-Or publish to `~/.m2` and add `mavenLocal()` to your repositories:
-
-```bash
-git clone https://github.com/vaazh-studios/backupkit.git
-cd backupkit && ./gradlew :backupkit:publishToMavenLocal
-```
-
-## Quickstart
-
-```kotlin
-val storage: CloudStorage = platformCloudStorage()      // CloudKitStorage(...) or ICloudStorage() on iOS, GoogleDriveStorage(context) on Android
-
+// common
 val engine = SyncEngine(
     storage = storage,
-    stateStore = FileSyncStateStore("$appFilesDir/backupkit-state.json"),
+    stateStore = FileSyncStateStore("$dir/backupkit-state.json"),
     policy = SyncPolicy(markerPath = "backup.json"),
 )
-
-val notes = notesJson()          // ByteArray
-val header = headerJson()        // ByteArray, uploaded last: its presence means "complete"
+val notes: ByteArray = notesJson()
+val header: ByteArray = headerJson()               // uploaded last: its presence means "complete"
 val outcome = engine.sync(
     SyncSnapshot(
         listOf(
             SyncEntry("notes.json", SyncSource.Bytes(notes), notes.size.toLong(), hash = sha256Hex(notes)),
             SyncEntry("backup.json", SyncSource.Bytes(header), header.size.toLong(), hash = sha256Hex(header)),
         ),
+        isEmpty = notes.isEmpty(),                 // a fresh install never overwrites a real backup
     ),
 )
 when (outcome) {
@@ -99,102 +70,82 @@ when (outcome) {
 }
 ```
 
-Large write-once files (photos) go in as `SyncSource.LocalFile(path)` with `hash = null`: they are
-compared by size, uploaded before the hashed entries, and never re-uploaded. Pass
-`SyncSnapshot(entries, isEmpty = notes.isEmpty())` so a fresh install with no data never overwrites
-an existing backup (the engine answers `RestorePending` instead).
+Photos and other write-once files go in as `SyncSource.LocalFile(path)` with `hash = null`: compared by size, uploaded first, never re-uploaded.
 
-## How it works
+## A more advanced example
 
-```mermaid
-flowchart LR
-    A[Your app data] -->|SyncSnapshot| E[SyncEngine]
-    E -->|writes, marker last| S[CloudStorage]
-    S --> I[(iCloud Drive container<br/>outside Documents)]
-    S --> G[(Google Drive<br/>appDataFolder)]
-    E <-->|SyncState| F[FileSyncStateStore]
-    style I fill:#eef6ff,stroke:#7aa7d9
-    style G fill:#eefbf0,stroke:#7fc28f
-```
-
-No server and no account of yours in the picture: the files sit in the user's own cloud, invisible to them in Files and Drive, readable only by your app. `SyncEngine` diffs the snapshot against the remote listing, uploads size-compared files, then hashed ones, then the marker, and saves state after every step so a killed process resumes where it stopped.
-
-## Two layers
-
-| | Type | Use it when |
-|---|---|---|
-| Layer 1 | `CloudStorage` | You want files in the user's cloud and your own logic on top: `writeFile`, `writeBytes`, `readBytes`, `downloadFile`, `delete`, `list`, `exists`, `availability`. |
-| Layer 2 | `SyncEngine` | You want "mirror this set of files, safely": diffing, ordering, resume after a kill, account-switch detection, a restore offer. See [the contract](docs/contract.md). |
-
-Both implementations behave identically, with two documented differences: Drive has file ids
-(`RemoteFile.remoteId`) and a 5 MB single-upload cap; iCloud reports not-yet-downloaded files with
-`size == -1`.
-
-## Restore on first launch
+Offer a restore on first launch, then pull the files down with a commit boundary and resume after a kill:
 
 ```kotlin
 when (val probe = engine.probe()) {
-    is RemoteProbe.Found -> offerRestore(parseHeader(probe.marker), probe.source)   // your schema, your UI
-    RemoteProbe.NotReady -> showStillUploading()                                    // a writer never finished, or iCloud is still fetching
-    RemoteProbe.None, is RemoteProbe.Unavailable, is RemoteProbe.Failed -> Unit
+    is RemoteProbe.Found -> if (askUser(parseHeader(probe.marker))) restore(probe)
+    RemoteProbe.NotReady -> showStillUploading()
+    else -> Unit
+}
+
+suspend fun restore(found: RemoteProbe.Found) {
+    engine.setHold(WriteHold.RestoreRunning)
+    val restore = RestoreEngine(engine, storage, FileRestoreRecordStore("$dir/restore.json"), placement = { group, files ->
+        importIntoMyModel(group, files); PlacementResult.Placed      // your schema, your rules
+    })
+    val outcome = restore.start(RestorePlan(found.source, files = listOf(
+        RestoreFile("notes.json", toLocalPath = "$dir/notes.json", required = true, group = "meta"),
+    ))) { p -> show("${'$'}{p.groupsDone} of ${'$'}{p.groupsTotal}") }
+    if (outcome !is RestoreOutcome.Failed) engine.setHold(WriteHold.None)
 }
 ```
 
-Then hand `RestoreEngine` a plan pinned to that source. Required files are the commit boundary: all of
-them download before any optional file, and one failure fails the run. Optional files are best-effort
-with three attempts each. Give files an opaque `group` (a record id, a word) and a `RestorePlacement`:
-the engine hands each group to you once its files are local, you import them into your own model and
-answer `Placed` or `Rejected`, and progress comes back in files and in groups. Progress is written to
-a record after every file, so a killed process continues from where it stopped with `resume()`, which
-first re-checks that the remote set is still the one the user accepted and reports `SourceChanged`
-otherwise.
+Full walkthrough, holds and `resume()`: [Restore on first launch](https://vaazh-studios.github.io/backupkit/restore/).
+
+## Support matrix
+
+| | CloudKit (iOS) | iCloud Drive (iOS) | Google Drive app-data (Android) |
+|---|---|---|---|
+| Transport | `CloudKitStorage` | `ICloudStorage` | `GoogleDriveStorage` |
+| Auth | entitlement only | entitlement only | silent token, `DriveConsent` once |
+| Single upload cap | 1 asset per save | container quota | 5 MB (multipart) |
+| Verified on a real device | iPhone 16 Pro, 2026-09-07 | iPhone 16 Pro, 2026-09-05 | Pixel 7 Pro, 2026-09-07 |
+
+CloudKit for app data the user never opens as files; iCloud Drive when the files should show in the Files app. Every row, and the differences between the transports: [support matrix](https://vaazh-studios.github.io/backupkit/support-matrix/).
+
+## Requirements
+
+| | Minimum | Built with |
+|---|---|---|
+| Kotlin / Gradle / AGP | 2.3 / 9.0 / 9.0 | 2.3.20 / 9.4.1 / 9.2.1 |
+| Android | minSdk 24 | compileSdk 36 |
+| iOS / Xcode | 16 / 16 | iOS 26 / Xcode 26 |
+
+Targets: `android`, `iosArm64`, `iosSimulatorArm64`, `iosX64`. Versioning and the experimental API policy: [stability](https://vaazh-studios.github.io/backupkit/stability/).
+
+## Samples
+
+| Sample | Shows | Recording |
+|---|---|---|
+| [Notes](sample/README.md) | sync with a marker, restore dialog on first launch, Android consent | pending |
+
+## Testing
+
+`com.vocabloot:backupkit-test` ships the fakes the library's own tests run on, so your sync and restore code is unit-testable with no cloud:
 
 ```kotlin
-engine.setHold(WriteHold.RestoreRunning)                       // sync() writes nothing while a hold is set
-val restore = RestoreEngine(engine, storage, FileRestoreRecordStore(path), placement = { group, files ->
-    if (group == "meta") importManifest(files) else attachPhotos(group, files)   // your model, your rules
-    PlacementResult.Placed
-})
-val outcome = restore.start(
-    RestorePlan(source = probe.source, files = listOf(
-        RestoreFile("manifest.json", toLocalPath = "$dir/manifest.json", required = true, group = "meta"),
-        RestoreFile("photos/w1.jpg", toLocalPath = "$dir/w1.jpg", required = false, group = "w1"),
-        RestoreFile("photos/w1.png", toLocalPath = "$dir/w1.png", required = false, group = "w1"),
-    )),
-) { progress -> show("Photos for ${'$'}{progress.groupsDone} of ${'$'}{progress.groupsTotal} words") }
-if (outcome !is RestoreOutcome.Failed) engine.setHold(WriteHold.None)
+val storage = FakeCloudStorage(readLocal = files::read, writeLocal = files::write)
+val engine = SyncEngine(storage, MemorySyncStateStore(), SyncPolicy(markerPath = "backup.json"))
+storage.failPutsContaining = "photos/"              // then assert the outcome and storage.putLog
 ```
 
-Importing the files into your own data structures is your code; BackupKit never guesses your schema.
+## Who's using it
 
-## Android consent, once
+- [Vocabloot](https://vocabloot.com) ([App Store](https://apps.apple.com/app/id6792888619), [Google Play](https://play.google.com/store/apps/details?id=com.tntstudios.snaplingo)): wordbook, photos and doodles mirror through this exact code. BackupKit is that code, extracted; Vocabloot 1.2 is the first store build that carries it.
 
-```kotlin
-val consent = DriveConsent(context)
-val launcher = rememberLauncherForActivityResult(StartIntentSenderForResult()) { result ->
-    granted = consent.wasGranted(result.data)
-}
-scope.launch {
-    when (val r = consent.request()) {
-        is DriveConsent.Request.Needed -> launcher.launch(IntentSenderRequest.Builder(r.intentSender).build())
-        DriveConsent.Request.AlreadyGranted -> granted = true
-        is DriveConsent.Request.Failed -> showError(r.cause)
-    }
-}
-```
+Works with anything that gives you bytes or a file path: SQLDelight, Room, Okio, kotlinx-serialization, your own Ktor client on Android. Using BackupKit? Open a PR and add yourself.
 
-Already running Google Sign-In? Pass your own `DriveTokenProvider` to `GoogleDriveStorage`.
+## Communication
 
-## Scheduling
-
-BackupKit does one sync per call and nothing in the background. A debounce plus a foreground
-trigger is twelve lines: [docs/scheduling.md](docs/scheduling.md).
-
-## Errors
-
-Every failure is a `CloudStorageException` carrying one `CloudError`:
-`NotAvailable`, `NeedsConsent`, `Offline`, `StorageFull`, `AuthRevoked`, `NotFound`, `Transport`.
-`SyncEngine.sync` never throws for cloud failures; it returns `SyncOutcome.Failed(error)`.
+- Questions and ideas: [Discussions](https://github.com/vaazh-studios/backupkit/discussions).
+- Bugs: [Issues](https://github.com/vaazh-studios/backupkit/issues/new/choose), with the `CloudError` and platform.
+- Security: [SECURITY.md](SECURITY.md), privately.
+- Contributing: [CONTRIBUTING.md](CONTRIBUTING.md). Conduct: [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md).
 
 ## Limits and honesty
 
@@ -215,23 +166,24 @@ Every failure is a `CloudStorageException` carrying one `CloudError`:
 - Not included: scheduling, encryption, restore-into-your-model, any UI, Dropbox/OneDrive
   (see [CloudBridge](https://github.com/jacobras/CloudBridge) for those).
 
-## Related work
+Open items with workarounds: [known issues](https://vaazh-studios.github.io/backupkit/known-issues/).
 
-[react-native-cloud-storage](https://github.com/kuatsu/react-native-cloud-storage) inspired the
-Layer 1 verbs. [IceCream](https://github.com/caiyue1993/IceCream) and Apple's `CKSyncEngine`
-inspired Layer 2's "engine owns the state" shape.
+## Compared with
+
+| | Android Auto Backup | Own server | CloudBridge | react-native-cloud-storage | BackupKit |
+|---|---|---|---|---|---|
+| Where the data lives | Google's backup service | your servers | user's Dropbox, Drive, OneDrive, WebDAV | user's iCloud or Drive | user's iCloud or Drive |
+| iOS | no | yes | yes | yes | **yes, entitlement only** |
+| Accounts you run | none | yes | none | none | **none** |
+| Sync engine (diff, resume, marker, holds) | opaque | yours | no, file API only | no, file API only | **yes** |
+| Restore with commit boundary | opaque | yours | no | no | **yes** |
+| Kotlin Multiplatform | n/a | n/a | yes | no (React Native) | **yes** |
 
 ## Documentation
 
-- [iOS setup](docs/setup-ios.md), [Android setup](docs/setup-android.md)
-- [The SyncEngine contract](docs/contract.md): the ten guarantees and the error mapping
-- [Bring your own scheduler](docs/scheduling.md)
-- [Design](docs/design.md), [Publishing](docs/publishing.md) (maintainers)
-- [API reference](https://vaazh-studios.github.io/backupkit/) (Dokka); the ABI is tracked in [`backupkit/api`](backupkit/api).
+[Docs site](https://vaazh-studios.github.io/backupkit/): setup, the SyncEngine contract, restore, consent, errors, scheduling, recipes, FAQ, known issues, stability. [API reference](https://vaazh-studios.github.io/backupkit/api/) (Dokka). Design notes and publishing steps are in [docs/](docs/) for maintainers.
 
-## Dependencies
-
-Common: `kotlinx-coroutines-core` (exposed), `kotlinx-serialization-json`, `kotlinx-io-core`. Android only: `ktor-client-core` (exposed, pass your own `HttpClient` if you have one) with the OkHttp engine, and `play-services-auth`. iOS links no HTTP client at all. Nothing else.
+Inspired by [react-native-cloud-storage](https://github.com/kuatsu/react-native-cloud-storage) (the Layer 1 verbs) and by [IceCream](https://github.com/caiyue1993/IceCream) and Apple's `CKSyncEngine` (the engine owns the state).
 
 ## License
 

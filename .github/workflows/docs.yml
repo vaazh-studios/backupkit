@@ -19,11 +19,20 @@ jobs:
           distribution: zulu
           java-version: 21
       - uses: gradle/actions/setup-gradle@v4
-      - name: Generate API reference
-        run: ./gradlew :backupkit:dokkaGenerate --no-daemon
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Build the docs site
+        run: |
+          pip install mkdocs-material
+          mkdocs build --strict
+      - name: Generate API reference into site/api
+        run: |
+          ./gradlew :backupkit:dokkaGenerate --no-daemon
+          rm -rf site/api && cp -R backupkit/build/dokka/html site/api
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: backupkit/build/dokka/html
+          path: site
   deploy:
     needs: build
     runs-on: ubuntu-latest

@@ -1,0 +1,42 @@
+site_name: BackupKit
+site_url: https://vaazh-studios.github.io/backupkit/
+repo_url: https://github.com/vaazh-studios/backupkit
+repo_name: vaazh-studios/backupkit
+edit_uri: edit/main/docs/
+docs_dir: docs
+theme:
+  name: material
+  palette:
+    - scheme: default
+      primary: deep orange
+      toggle: { icon: material/brightness-7, name: Dark }
+    - scheme: slate
+      primary: deep orange
+      toggle: { icon: material/brightness-4, name: Light }
+  features: [navigation.sections, navigation.top, content.code.copy, search.suggest]
+markdown_extensions:
+  - admonition
+  - tables
+  - pymdownx.superfences
+  - pymdownx.highlight
+  - toc: { permalink: true }
+nav:
+  - Home: index.md
+  - Setup:
+      - iOS: setup-ios.md
+      - Android: setup-android.md
+  - Support matrix: support-matrix.md
+  - Guides:
+      - The SyncEngine contract: contract.md
+      - Restore on first launch: restore.md
+      - Android consent, once: consent-android.md
+      - Errors and user copy: errors.md
+      - Bring your own scheduler: scheduling.md
+      - Recipes: recipes.md
+  - FAQ: faq.md
+  - Known issues: known-issues.md
+  - Stability and versions: stability.md
+  - Maintainers:
+      - Design: design.md
+      - Publishing: publishing.md
+  - API reference: api/index.html
