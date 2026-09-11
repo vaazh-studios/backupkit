@@ -22,4 +22,4 @@ Semantic versioning from 1.0. Before 1.0, a minor version may change the API; th
 
 ## Migration guides
 
-None yet. From the first breaking release on, each major version gets a guide here.
+There have been no breaking releases. From the first one on, each major version gets a guide here.

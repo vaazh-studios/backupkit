@@ -15,7 +15,7 @@ Kotlin Multiplatform backup into the user's **own** cloud: iCloud on iOS (CloudK
 
 - [Why](#why) · [Features](#features) · [BackupKit 101](#backupkit-101) · [A more advanced example](#a-more-advanced-example)
 - [Support matrix](#support-matrix) · [Requirements](#requirements) · [Samples](#samples) · [Testing](#testing)
-- [Who's using it](#whos-using-it) · [Communication](#communication) · [Limits and honesty](#limits-and-honesty) · [Compared with](#compared-with)
+- [Who's using it](#whos-using-it) · [Communication](#communication) · [Limits](#limits) · [Compared with](#compared-with)
 
 ## Why
 
@@ -147,7 +147,7 @@ Works with anything that gives you bytes or a file path: SQLDelight, Room, Okio,
 - Security: [SECURITY.md](SECURITY.md), privately.
 - Contributing: [CONTRIBUTING.md](CONTRIBUTING.md). Conduct: [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md).
 
-## Limits and honesty
+## Limits
 
 - Drive: files above 5 MB use Drive's resumable protocol in 8 MiB chunks, streamed from disk; the multipart path stays for small files.
 - Drive app-data counts against the user's Drive quota (Android Auto Backup does not).
