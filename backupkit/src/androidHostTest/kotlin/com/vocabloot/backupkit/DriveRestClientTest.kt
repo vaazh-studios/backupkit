@@ -1,6 +1,8 @@
 package com.vocabloot.backupkit
 
 import com.vocabloot.backupkit.internal.DriveRestClient
+import io.ktor.http.HttpMethod
+import com.vocabloot.backupkit.internal.BytesChunkSource
 import com.vocabloot.backupkit.internal.LocalFiles
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.mock.MockEngine
@@ -27,13 +29,19 @@ class DriveRestClientTest {
     private val tokens = mutableListOf("tok-1", "tok-2")
     private val cleared = mutableListOf<String>()
 
-    private fun client(handler: suspend MockRequestHandleScope.(HttpRequestData) -> HttpResponseData): DriveRestClient =
+    private fun client(chunkBytes: Int = 8 * 1024 * 1024, handler: suspend MockRequestHandleScope.(HttpRequestData) -> HttpResponseData): DriveRestClient =
         DriveRestClient(
             client = HttpClient(MockEngine { request -> requests += request; handler(request) }),
             tokenProvider = { tokens.first() },
             onUnauthorized = { cleared += it; tokens.removeAt(0) },
             retryDelay = { },
+            chunkBytes = chunkBytes,
         )
+
+    private val session = "https://www.googleapis.com/upload/drive/v3/files?uploadType=resumable&upload_id=abc"
+    private fun MockRequestHandleScope.startResponse() = respond("", HttpStatusCode.OK, headersOf(HttpHeaders.Location, session))
+    private fun MockRequestHandleScope.incomplete(heldThrough: Long) = respond("", HttpStatusCode.PermanentRedirect, headersOf(HttpHeaders.Range, "bytes=0-$heldThrough"))
+    private fun contentRanges() = requests.mapNotNull { it.headers[HttpHeaders.ContentRange] }
 
     private val jsonHeaders = headersOf(HttpHeaders.ContentType, "application/json")
 
@@ -144,4 +152,73 @@ class DriveRestClientTest {
 
         assertEquals("BYTES", LocalFiles.readAllBytes(target)!!.decodeToString())
     }
+    @Test
+    fun resumable_create_streams_chunks_with_content_range_and_returns_the_file_id() = runTest {
+        val bytes = "0123456789".encodeToByteArray()
+        val c = client(chunkBytes = 4) { req ->
+            when {
+                req.method == HttpMethod.Post -> { assertEquals("10", req.headers["X-Upload-Content-Length"]); startResponse() }
+                req.headers[HttpHeaders.ContentRange] == "bytes 0-3/10" -> incomplete(3)
+                req.headers[HttpHeaders.ContentRange] == "bytes 4-7/10" -> incomplete(7)
+                else -> respond("""{"id":"big-1","name":"video.mp4"}""", HttpStatusCode.OK, jsonHeaders)
+            }
+        }
+
+        val id = c.uploadResumable(name = "video.mp4", mimeType = "video/mp4", source = BytesChunkSource(bytes), existingFileId = null)
+
+        assertEquals("big-1", id)
+        assertEquals("resumable", requests.first().url.parameters["uploadType"])
+        assertEquals(listOf("bytes 0-3/10", "bytes 4-7/10", "bytes 8-9/10"), contentRanges())
+    }
+
+    @Test
+    fun resumable_update_whose_file_vanished_falls_back_to_create() = runTest {
+        val c = client(chunkBytes = 64) { req ->
+            when (req.method) {
+                HttpMethod.Patch -> respond("gone", HttpStatusCode.NotFound)
+                HttpMethod.Post -> startResponse()
+                else -> respond("""{"id":"fresh"}""", HttpStatusCode.OK, jsonHeaders)
+            }
+        }
+
+        val id = c.uploadResumable("a.bin", "application/octet-stream", BytesChunkSource(ByteArray(10)), existingFileId = "old-id")
+
+        assertEquals("fresh", id)
+        assertEquals(listOf("PATCH", "POST", "PUT"), requests.map { it.method.value })
+    }
+
+    @Test
+    fun a_server_error_on_a_chunk_is_retried_in_place() = runTest {
+        var puts = 0
+        val c = client(chunkBytes = 5) { req ->
+            when {
+                req.method == HttpMethod.Post -> startResponse()
+                ++puts == 2 -> respond("boom", HttpStatusCode.InternalServerError)
+                req.headers[HttpHeaders.ContentRange] == "bytes 0-4/10" -> incomplete(4)
+                else -> respond("""{"id":"ok"}""", HttpStatusCode.OK, jsonHeaders)
+            }
+        }
+
+        assertEquals("ok", c.uploadResumable("a.bin", "application/octet-stream", BytesChunkSource(ByteArray(10)), null))
+        assertEquals(listOf("bytes 0-4/10", "bytes 5-9/10", "bytes 5-9/10"), contentRanges())
+    }
+
+    @Test
+    fun a_dropped_connection_queries_the_session_and_continues_from_what_drive_holds() = runTest {
+        var puts = 0
+        val c = client(chunkBytes = 4) { req ->
+            when {
+                req.method == HttpMethod.Post -> startResponse()
+                req.headers[HttpHeaders.ContentRange] == "bytes */10" -> incomplete(3)
+                ++puts == 2 -> throw java.io.IOException("connection reset")
+                req.headers[HttpHeaders.ContentRange] == "bytes 0-3/10" -> incomplete(3)
+                req.headers[HttpHeaders.ContentRange] == "bytes 4-7/10" -> incomplete(7)
+                else -> respond("""{"id":"ok"}""", HttpStatusCode.OK, jsonHeaders)
+            }
+        }
+
+        assertEquals("ok", c.uploadResumable("a.bin", "application/octet-stream", BytesChunkSource("0123456789".encodeToByteArray()), null))
+        assertEquals(listOf("bytes 0-3/10", "bytes 4-7/10", "bytes */10", "bytes 4-7/10", "bytes 8-9/10"), contentRanges())
+    }
+
 }

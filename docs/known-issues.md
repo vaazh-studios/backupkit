@@ -4,7 +4,7 @@ Open items we know about, in the spirit of Alamofire's radar list. Each one has 
 
 | Area | Issue | Workaround | Status |
 |---|---|---|---|
-| Google Drive | Multipart upload caps at 5 MB per file | Downscale or split before backing up | Resumable upload on the roadmap |
+| Google Drive | Resumable uploads (above 5 MB) are verified against mocked Drive responses only | Keep an eye on the first large upload from a real device | Open until a device pass |
 | Google Drive | App-data counts against the user's quota | Tell users in your settings copy | By design (Google) |
 | iCloud Drive | Placeholder files report `size == -1` until downloaded | `prefetch()` before reading | Documented |
 | CloudKit | Production has no schema until deployed | Deploy from the console before the first TestFlight build | Documented in setup |

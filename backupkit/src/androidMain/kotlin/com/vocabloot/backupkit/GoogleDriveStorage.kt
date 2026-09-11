@@ -1,7 +1,9 @@
 package com.vocabloot.backupkit
 
 import android.content.Context
+import com.vocabloot.backupkit.internal.BytesChunkSource
 import com.vocabloot.backupkit.internal.DriveRestClient
+import com.vocabloot.backupkit.internal.FileChunkSource
 import com.vocabloot.backupkit.internal.LocalFiles
 import io.ktor.client.HttpClient
 import kotlinx.coroutines.Dispatchers
@@ -9,8 +11,9 @@ import kotlinx.coroutines.withContext
 
 /**
  * Google Drive app-data transport. Flat folder; paths are used verbatim as Drive file names.
- * Single uploads are capped at 5 MB (Drive's multipart limit). [list] also removes duplicate
- * files left by interrupted creates, keeping the newest by modified time.
+ * Uploads up to 5 MB go multipart in one request; larger ones use Drive's resumable protocol in
+ * 8 MiB chunks, streamed from disk for local files. [list] also removes duplicate files left by
+ * interrupted creates, keeping the newest by modified time.
  */
 public class GoogleDriveStorage(
     context: Context,
@@ -53,10 +56,9 @@ public class GoogleDriveStorage(
 
     override suspend fun writeBytes(path: String, bytes: ByteArray, mimeType: String, existingRemoteId: String?): String? =
         withContext(Dispatchers.IO) {
-            if (bytes.size > MAX_SINGLE_UPLOAD_BYTES) {
-                throw CloudStorageException(CloudError.Transport, "$path is ${bytes.size} bytes; above the 5 MB single-upload limit")
-            }
-            if (existingRemoteId != null && rest.update(fileId = existingRemoteId, bytes = bytes, mimeType = mimeType)) {
+            if (bytes.size > MAX_MULTIPART_BYTES) {
+                rest.uploadResumable(name = path, mimeType = mimeType, source = BytesChunkSource(bytes), existingFileId = existingRemoteId)
+            } else if (existingRemoteId != null && rest.update(fileId = existingRemoteId, bytes = bytes, mimeType = mimeType)) {
                 existingRemoteId
             } else {
                 // No id, or the id vanished (deleted remotely, dedupe): create a fresh file.
@@ -64,11 +66,16 @@ public class GoogleDriveStorage(
             }
         }
 
-    override suspend fun writeFile(path: String, localPath: String, mimeType: String, existingRemoteId: String?): String? {
-        val bytes = withContext(Dispatchers.IO) { LocalFiles.readAllBytes(localPath) }
-            ?: throw CloudStorageException(CloudError.NotFound, "local file missing: $localPath")
-        return writeBytes(path = path, bytes = bytes, mimeType = mimeType, existingRemoteId = existingRemoteId)
-    }
+    override suspend fun writeFile(path: String, localPath: String, mimeType: String, existingRemoteId: String?): String? =
+        withContext(Dispatchers.IO) {
+            val size = LocalFiles.fileSize(localPath) ?: throw CloudStorageException(CloudError.NotFound, "local file missing: $localPath")
+            if (size > MAX_MULTIPART_BYTES) {
+                rest.uploadResumable(name = path, mimeType = mimeType, source = FileChunkSource(localPath, size), existingFileId = existingRemoteId)
+            } else {
+                val bytes = LocalFiles.readAllBytes(localPath) ?: throw CloudStorageException(CloudError.NotFound, "local file missing: $localPath")
+                writeBytes(path = path, bytes = bytes, mimeType = mimeType, existingRemoteId = existingRemoteId)
+            }
+        }
 
     override suspend fun readBytes(path: String, remoteId: String?): ByteArray? = withContext(Dispatchers.IO) {
         val id = remoteId ?: resolveId(path) ?: return@withContext null
@@ -95,6 +102,6 @@ public class GoogleDriveStorage(
 
     private companion object {
         const val TAG = "GoogleDriveStorage"
-        const val MAX_SINGLE_UPLOAD_BYTES = 5 * 1024 * 1024
+        const val MAX_MULTIPART_BYTES = 5 * 1024 * 1024
     }
 }

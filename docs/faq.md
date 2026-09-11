@@ -10,7 +10,7 @@
 
 **`sync()` answered `RestorePending` and uploaded nothing.** The snapshot was marked empty and the cloud already holds a backup. This is the guard against a fresh install wiping a user's backup. Offer a restore; see [restore](restore.md).
 
-**A 6 MB photo fails on Drive.** Multipart uploads cap at 5 MB per file. Downscale before you back up, or split. Resumable uploads are on the roadmap.
+**Does Drive have a file size limit?** Not from BackupKit. Files up to 5 MB go up in one multipart request; larger ones use Drive's resumable protocol in 8 MiB chunks, streamed from disk, and a dropped connection continues from the last chunk Drive acknowledged. The user's Drive quota is the only limit.
 
 **`list()` on iCloud Drive reports `size == -1`.** The file is a placeholder that has not been downloaded to this device yet. `prefetch(paths)` before `readBytes` or `downloadFile`.
 

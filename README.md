@@ -103,7 +103,7 @@ Full walkthrough, holds and `resume()`: [Restore on first launch](https://vaazh-
 |---|---|---|---|
 | Transport | `CloudKitStorage` | `ICloudStorage` | `GoogleDriveStorage` |
 | Auth | entitlement only | entitlement only | silent token, `DriveConsent` once |
-| Single upload cap | 1 asset per save | container quota | 5 MB (multipart) |
+| Single upload cap | 1 asset per save | container quota | none (resumable above 5 MB) |
 | Verified on a real device | iPhone 16 Pro, 2026-09-07 | iPhone 16 Pro, 2026-09-05 | Pixel 7 Pro, 2026-09-07 |
 
 CloudKit for app data the user never opens as files; iCloud Drive when the files should show in the Files app. Every row, and the differences between the transports: [support matrix](https://vaazh-studios.github.io/backupkit/support-matrix/).
@@ -149,7 +149,7 @@ Works with anything that gives you bytes or a file path: SQLDelight, Room, Okio,
 
 ## Limits and honesty
 
-- Drive: multipart uploads are capped at 5 MB per file. Resumable uploads are on the roadmap.
+- Drive: files above 5 MB use Drive's resumable protocol in 8 MiB chunks, streamed from disk; the multipart path stays for small files. Verified with mocked Drive responses only so far, not against Drive on a device.
 - Drive app-data counts against the user's Drive quota (Android Auto Backup does not).
 - iCloud on the simulator needs an iCloud login on the simulator.
 - Verified on real devices, in Vocabloot's development builds: `GoogleDriveStorage` (Pixel 7 Pro,

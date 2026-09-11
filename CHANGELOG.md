@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.3.0 (unreleased)
+
+- Google Drive: files above 5 MB upload through Drive's resumable protocol in 8 MiB chunks, streamed from disk for local files, continuing from what Drive holds after a dropped connection. The 5 MB `Transport` error is gone.
+- `backupkit-test`: `FakeCloudStorage` gains `reportUnknownSizes`, `failFetchesContaining` and put gating (`gatePutsContaining`, `putStarted`, `releasePuts()`).
+
 ## 0.2.0 (2026-09-09)
 
 - New artifact `com.vocabloot:backupkit-test`: `FakeCloudStorage`, `MemorySyncStateStore`, `MemoryRestoreRecordStore`, the fakes the library's own tests run on, so an app can unit-test its sync and restore code without a cloud.
