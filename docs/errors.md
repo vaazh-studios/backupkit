@@ -18,4 +18,4 @@ Every adopter ends up writing these strings. A starting point that Vocabloot shi
 | `NotFound` | a file vanished between list and read | (retry silently; the next sync heals it) |
 | `Transport` | anything else | "Backup hit a problem. Will retry." |
 
-`SyncOutcome.Unavailable(reason)` carries `NoAccount`, `NeedsConsent` or `RestorePending`; the last one means the device is empty and the cloud is not, so offer a restore instead of uploading.
+`SyncOutcome.Unavailable(reason)` carries `NoAccount`, `NeedsConsent`, `RestorePending`, `WriteHeld` or `ShrinkSuspected`. `RestorePending` means the device is empty and the cloud is not, so offer a restore instead of uploading. `ShrinkSuspected` means this device would delete most of the backup: "This phone has fewer words than your backup. Backup is paused until you choose." with two actions, restore the backup or replace it with this phone's words (retry with `allowShrink = true`).

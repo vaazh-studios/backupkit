@@ -420,4 +420,72 @@ class SyncEngineTest {
         assertEquals(listOf("items/a.jpg", "items/a.png"), h.storage.putLog)
     }
 
+    // Shrink guard: 4 items = 8 media files remotely; dropping 3 items deletes 6 of 8 (75%), dropping 2 deletes 4 of 8 (50%).
+
+    @Test
+    fun deleting_most_of_the_remote_set_is_refused_and_writes_nothing() = runTest {
+        val h = harness("a", "b", "c", "d")
+        h.run()
+        h.storage.putLog.clear()
+        h.items.retainAll(listOf("d")); h.deleteMedia("a"); h.deleteMedia("b"); h.deleteMedia("c")
+
+        val outcome = h.run()
+
+        assertEquals(SyncOutcome.Unavailable(UnavailableReason.ShrinkSuspected), outcome)
+        assertEquals(emptyList(), h.storage.putLog)
+        assertEquals(emptyList(), h.storage.deleteLog)
+    }
+
+    @Test
+    fun deleting_exactly_the_guard_fraction_is_allowed() = runTest {
+        val h = harness("a", "b", "c", "d")
+        h.run()
+        h.items.retainAll(listOf("c", "d")); h.deleteMedia("a"); h.deleteMedia("b")
+
+        assertIs<SyncOutcome.Synced>(h.run())
+        assertEquals(4, h.storage.deleteLog.size)
+    }
+
+    @Test
+    fun the_guard_does_not_apply_below_its_floor() = runTest {
+        val h = harness("a")   // 2 remote media files, below minRemoteEntries = 4
+        h.run()
+        h.items.clear(); h.deleteMedia("a")
+
+        assertIs<SyncOutcome.Synced>(h.run())
+        assertEquals(2, h.storage.deleteLog.size)
+    }
+
+    @Test
+    fun allowShrink_lets_a_confirmed_shrink_through() = runTest {
+        val h = harness("a", "b", "c", "d")
+        h.run()
+        h.items.retainAll(listOf("d")); h.deleteMedia("a"); h.deleteMedia("b"); h.deleteMedia("c")
+
+        val outcome = h.engine().sync(h.snapshot().copy(allowShrink = true)) { _, _ -> }
+
+        assertIs<SyncOutcome.Synced>(outcome)
+        assertEquals(6, h.storage.deleteLog.size)
+    }
+
+    @Test
+    fun a_null_guard_disables_the_check() = runTest {
+        val h = harness("a", "b", "c", "d")
+        h.run()
+        h.items.retainAll(listOf("d")); h.deleteMedia("a"); h.deleteMedia("b"); h.deleteMedia("c")
+        val engine = SyncEngine(h.storage, h.stateStore, SyncPolicy(markerPath = "backup.json", shrinkGuard = null), clock = { h.now })
+
+        assertIs<SyncOutcome.Synced>(engine.sync(h.snapshot()) { _, _ -> })
+    }
+
+    @Test
+    fun the_empty_guard_answers_before_the_shrink_guard() = runTest {
+        val h = harness("a", "b", "c", "d")
+        h.run()
+        val fresh = Harness(emptyList())          // never synced, empty, same remote
+        fresh.storage.remote.putAll(h.storage.remote)
+
+        assertEquals(SyncOutcome.Unavailable(UnavailableReason.RestorePending), fresh.run())
+    }
+
 }

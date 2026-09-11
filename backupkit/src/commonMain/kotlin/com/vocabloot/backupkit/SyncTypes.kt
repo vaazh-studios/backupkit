@@ -31,13 +31,34 @@ public data class SyncEntry(val path: String, val source: SyncSource, val size: 
 public data class SyncSnapshot(
     val entries: List<SyncEntry>,
     val isEmpty: Boolean = entries.none { it.source !is SyncSource.Absent },
+    /** The user confirmed that this device's smaller set should replace the backup; the shrink guard steps aside for this run. */
+    val allowShrink: Boolean = false,
 )
+
+/**
+ * Refuses a run that would delete more than [maxDeleteFraction] of the remote set once the remote
+ * holds at least [minRemoteEntries] non-marker files. A device that lost most of its data, or an app
+ * bug that projected an empty model, must not turn a healthy backup into a copy of the damage. The
+ * run answers [UnavailableReason.ShrinkSuspected] and writes nothing; the app asks the user and
+ * retries with `SyncSnapshot(allowShrink = true)`.
+ */
+public data class ShrinkGuard(
+    val maxDeleteFraction: Double = 0.5,
+    val minRemoteEntries: Int = 4,
+) {
+    init {
+        require(maxDeleteFraction in 0.0..1.0) { "maxDeleteFraction must be within 0..1" }
+        require(minRemoteEntries >= 1) { "minRemoteEntries must be at least 1" }
+    }
+}
 
 public data class SyncPolicy(
     /** Uploaded LAST, only after everything else succeeded; its presence means "the remote set is complete". */
     val markerPath: String,
     /** An empty snapshot on a device that never synced must not overwrite an existing remote set. */
     val guardEmptyOverExisting: Boolean = true,
+    /** Refuses runs that would delete most of the remote set; null disables it. See [ShrinkGuard]. */
+    val shrinkGuard: ShrinkGuard? = ShrinkGuard(),
     val mimeTypeOf: (path: String) -> String = ::defaultMimeType,
 )
 
@@ -50,6 +71,13 @@ public enum class UnavailableReason {
 
     /** A [WriteHold] is set (a restore is running or incomplete); nothing was written. */
     WriteHeld,
+
+    /**
+     * The snapshot would delete more than the [ShrinkGuard] allows of the remote set; nothing was
+     * written. Ask the user whether this device's smaller set should replace the backup, then retry
+     * with `SyncSnapshot(allowShrink = true)`, or offer a restore instead.
+     */
+    ShrinkSuspected,
 }
 
 /** Parks [SyncEngine.sync] while a restore runs or is incomplete. Persisted in [SyncState]. */

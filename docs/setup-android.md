@@ -15,4 +15,4 @@ There is no sign-in screen: the user sees Google's permission dialog once, then 
    `DriveConsent` (see the README) or `availability()` returns `NeedsConsent`.
 
 **Uninstall** drops the grant; the next install asks once more. **Quota:** app-data counts against
-the user's Drive storage. **Limit:** 5 MB per uploaded file.
+the user's Drive storage. Files above 5 MB upload through Drive's resumable protocol; the quota is the only limit.

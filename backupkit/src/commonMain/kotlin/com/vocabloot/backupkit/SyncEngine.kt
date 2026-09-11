@@ -124,6 +124,17 @@ public class SyncEngine(
             return SyncOutcome.Unavailable(UnavailableReason.RestorePending)
         }
 
+        // A run that would delete most of a healthy remote set is refused until the app confirms it.
+        policy.shrinkGuard?.let { guard ->
+            val remoteCount = state.entries.keys.count { it != policy.markerPath }
+            if (!snapshot.allowShrink && remoteCount >= guard.minRemoteEntries &&
+                deletes.size.toDouble() / remoteCount > guard.maxDeleteFraction
+            ) {
+                logW(TAG) { "snapshot would delete ${deletes.size} of $remoteCount remote entries; refusing without allowShrink" }
+                return SyncOutcome.Unavailable(UnavailableReason.ShrinkSuspected)
+            }
+        }
+
         val total = sizeUploads.size + hashedUploads.size + (if (markerNeeded) 1 else 0) + deletes.size
         var done = 0
         onProgress(done, total)

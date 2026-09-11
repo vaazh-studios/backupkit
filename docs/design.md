@@ -333,7 +333,7 @@ val outcome = engine.sync(
 | Listing | recursive walk, skips temp and hidden, reports `.icloud` placeholders with size -1 | `files.list?spaces=appDataFolder`, paged, newest duplicate wins and stragglers deleted best-effort |
 | Identity | archived `ubiquityIdentityToken` sha256; `NSUbiquityIdentityDidChangeNotification` drops the cached container | none; marker file id |
 | Auth | entitlement only | silent `AuthorizationClient` token; 401 clears the token once and retries; 5xx/429/rate-limit 403 retry 3× with 1/2/4 s backoff |
-| Limits | container quota (user's iCloud plan) | 5 MB single-upload cap (documented; resumable upload is a future item); counts against the user's Drive quota, unlike Auto Backup |
+| Limits | container quota (user's iCloud plan) | multipart up to 5 MB, resumable above (0.3.0); counts against the user's Drive quota, unlike Auto Backup |
 | Simulator | needs an iCloud login on the simulator | works with a debug SHA-1 registered in the OAuth client |
 
 Error mapping is a table in `docs/contract.md`: Cocoa 640/4354 →

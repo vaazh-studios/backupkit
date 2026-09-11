@@ -12,6 +12,7 @@
 8. **Deletes after uploads.** A failed delete is logged and retried next run; it never fails the sync.
 9. **Drive identity adoption.** When `identityKey()` is null, the marker's file id becomes the identity after its first upload.
 10. **Progress.** `onProgress(done, total)` fires before the first step and after every put and delete.
+11. **Shrink guard.** With `SyncPolicy.shrinkGuard` set (default: half, floor 4), a run whose deletes exceed `maxDeleteFraction` of the known remote non-marker entries, once there are at least `minRemoteEntries` of them, returns `Unavailable(ShrinkSuspected)` before any write. `SyncSnapshot(allowShrink = true)` lifts it for that run; `shrinkGuard = null` disables it. The empty guard (4) is checked first.
 
 ## CloudKit specifics
 

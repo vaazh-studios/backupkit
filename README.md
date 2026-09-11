@@ -25,7 +25,7 @@ Every app with a wordbook or a journal eventually needs "a new phone should not 
 
 - **The user's cloud, not yours.** App-private iCloud container or Drive's hidden `appDataFolder` (the one WhatsApp uses).
 - **Zero code on iOS, one tap on Android.** The iCloud entitlement is the iOS setup; Android shows Google's dialog once.
-- **Complete-or-absent sync.** Diffs, uploads the marker last, saves state after every step, resumes after a kill, refuses to merge two accounts.
+- **Complete-or-absent sync.** Diffs, uploads the marker last, saves state after every step, resumes after a kill, refuses to merge two accounts, and refuses to delete most of a healthy backup without the user's say-so.
 - **Restore that survives a kill.** Typed probe, write hold, resumable download with a commit boundary and per-file attempts.
 - **Typed errors.** Seven `CloudError` values, nothing platform-specific leaks out.
 - **Small.** About 1,200 lines. No DI framework, no Compose, no Firebase; iOS links no HTTP client.
@@ -33,7 +33,7 @@ Every app with a wordbook or a journal eventually needs "a new phone should not 
 ## BackupKit 101
 
 ```kotlin
-// libs.versions.toml            backupkit = { module = "com.vocabloot:backupkit", version = "0.2.0" }
+// libs.versions.toml            backupkit = { module = "com.vocabloot:backupkit", version = "0.3.0" }
 // build.gradle.kts (shared)     commonMain.dependencies { implementation(libs.backupkit) }
 ```
 
@@ -126,7 +126,7 @@ Targets: `android`, `iosArm64`, `iosSimulatorArm64`, `iosX64`. Versioning and th
 
 ## Testing
 
-`com.vocabloot:backupkit-test` ships the fakes the library's own tests run on, so your sync and restore code is unit-testable with no cloud:
+`com.vocabloot:backupkit-test` (same version) ships the fakes the library's own tests run on, so your sync and restore code is unit-testable with no cloud:
 
 ```kotlin
 val storage = FakeCloudStorage(readLocal = files::read, writeLocal = files::write)

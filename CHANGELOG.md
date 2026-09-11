@@ -1,7 +1,8 @@
 # Changelog
 
-## 0.3.0 (unreleased)
+## 0.3.0 (2026-09-11)
 
+- `SyncPolicy.shrinkGuard` (on by default: more than half of at least four remote entries) refuses a run that would delete most of the backup and answers the new `UnavailableReason.ShrinkSuspected`; `SyncSnapshot.allowShrink = true` lifts it for a confirmed run. **Source-breaking for exhaustive `when` over `UnavailableReason`; `SyncPolicy` and `SyncSnapshot` gained constructor parameters, so recompile against 0.3.0.**
 - Google Drive: files above 5 MB upload through Drive's resumable protocol in 8 MiB chunks, streamed from disk for local files, continuing from what Drive holds after a dropped connection. The 5 MB `Transport` error is gone.
 - `backupkit-test`: `FakeCloudStorage` gains `reportUnknownSizes`, `failFetchesContaining` and put gating (`gatePutsContaining`, `putStarted`, `releasePuts()`).
 
