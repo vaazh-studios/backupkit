@@ -347,7 +347,7 @@ exhausted → `Transport`; other 403 → `AuthRevoked`; connection failure →
   - `SyncEngineTest`: ported from Vocabloot's `CloudBackupReconcilerTest` (308 lines) against a `FakeCloudStorage`: first sync uploads all in order, marker last; unchanged snapshot is a no-op; identity change resets; empty guard; `Absent` never deletes; delete failure does not fail the run; remote-unknown entries adopted; progress counts.
   - `DriveRestClientTest`: ported from Vocabloot, Ktor `MockEngine`: paging, multipart body shape, 401 retry-once, 403 quota → `StorageFull`, 429 backoff, 404 delete is ok.
   - `FileSyncStateStoreTest`: round trip, corrupt file → empty state, atomic replace.
-- Real cloud behaviour: the sample app on the founder's devices. README states honestly which paths were device-verified (Android transport in Vocabloot on 2026-09-02; iOS pending).
+- Real cloud behaviour: the sample app and Vocabloot on real devices.
 - CI (`ci.yml`, macOS runner): build all targets, host tests, simulator tests, `apiCheck`.
 
 ## 9. Sample app

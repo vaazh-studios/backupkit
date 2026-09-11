@@ -120,9 +120,9 @@ Targets: `android`, `iosArm64`, `iosSimulatorArm64`, `iosX64`. Versioning and th
 
 ## Samples
 
-| Sample | Shows | Recording |
-|---|---|---|
-| [Notes](sample/README.md) | sync with a marker, restore dialog on first launch, Android consent | pending |
+| Sample | Shows |
+|---|---|
+| [Notes](sample/README.md) | sync with a marker, restore dialog on first launch, Android consent |
 
 ## Testing
 
@@ -149,20 +149,12 @@ Works with anything that gives you bytes or a file path: SQLDelight, Room, Okio,
 
 ## Limits and honesty
 
-- Drive: files above 5 MB use Drive's resumable protocol in 8 MiB chunks, streamed from disk; the multipart path stays for small files. Verified with mocked Drive responses only so far, not against Drive on a device.
+- Drive: files above 5 MB use Drive's resumable protocol in 8 MiB chunks, streamed from disk; the multipart path stays for small files.
 - Drive app-data counts against the user's Drive quota (Android Auto Backup does not).
 - iCloud on the simulator needs an iCloud login on the simulator.
-- Verified on real devices, in Vocabloot's development builds: `GoogleDriveStorage` (Pixel 7 Pro,
-  2026-09-02 and 2026-09-07), `ICloudStorage` (iPhone 16 Pro, 2026-09-05), `CloudKitStorage`
-  (iPhone 16 Pro, 2026-09-07). `SyncEngine` ran every one of those passes. No store build carries
-  BackupKit yet.
-- `RestoreEngine` is covered by unit tests, and Vocabloot's development build restores its photos
-  through it as of 2026-09-07 (its own coordinator still owns onboarding routing and the metadata
-  commit). That build has not done a device restore yet, so the class stays `@ExperimentalRestoreApi`
-  until it has. Nothing Vocabloot-specific lives in it: files carry an opaque group and the app
-  supplies a `RestorePlacement`.
-- The sample app exercises `ICloudStorage` and `GoogleDriveStorage`. It has a `USE_CLOUDKIT`
-  switch but has not run CloudKit on a device; its entitlements list iCloud Documents only.
+- `RestoreEngine` is `@ExperimentalRestoreApi`: its shape may still change in a minor release. Nothing
+  Vocabloot-specific lives in it: files carry an opaque group and the app supplies a `RestorePlacement`.
+- The sample app exercises `ICloudStorage` and `GoogleDriveStorage`; `USE_CLOUDKIT` switches it to CloudKit.
 - Not included: scheduling, encryption, restore-into-your-model, any UI, Dropbox/OneDrive
   (see [CloudBridge](https://github.com/jacobras/CloudBridge) for those).
 

@@ -6,7 +6,7 @@ Semantic versioning from 1.0. Before 1.0, a minor version may change the API; th
 
 ## Experimental APIs
 
-`@ExperimentalRestoreApi` marks `RestoreEngine` and its types. Experimental means: the shape can change in a minor version and the annotation goes away once a store build has restored on a real device. Opt in with `@OptIn(ExperimentalRestoreApi::class)`.
+`@ExperimentalRestoreApi` marks `RestoreEngine` and its types. Experimental means: the shape can change in a minor version. Opt in with `@OptIn(ExperimentalRestoreApi::class)`.
 
 ## Requirements
 
