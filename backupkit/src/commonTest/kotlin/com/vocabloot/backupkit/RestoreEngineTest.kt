@@ -291,4 +291,17 @@ class RestoreEngineTest {
         val failed = runCatching { h.restore.start(bad) }
         assertIs<IllegalArgumentException>(failed.exceptionOrNull())
     }
+    @Test
+    fun a_fetch_failure_counts_an_attempt_and_leaves_the_optional_file_pending() = runTest {
+        val h = Harness()
+        h.storage.failFetchesContaining = "items/b.jpg"
+
+        val outcome = h.start()
+
+        assertIs<RestoreOutcome.Partial>(outcome)
+        val record = h.records.record!!
+        assertEquals(1, record.files.single { it.path == "items/b.jpg" }.attempts)
+        assertEquals(false, record.files.single { it.path == "items/b.jpg" }.done)
+    }
+
 }

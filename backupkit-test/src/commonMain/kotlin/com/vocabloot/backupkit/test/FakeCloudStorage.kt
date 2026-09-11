@@ -6,6 +6,8 @@ import com.vocabloot.backupkit.CloudProvider
 import com.vocabloot.backupkit.CloudStorage
 import com.vocabloot.backupkit.CloudStorageException
 import com.vocabloot.backupkit.RemoteFile
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.flow.MutableStateFlow
 
 /**
  * In-memory [CloudStorage] for tests. Every failure mode the engines react to can be switched on:
@@ -33,6 +35,14 @@ public class FakeCloudStorage(
     public var failListing: CloudError? = null
     public var failReadsContaining: String? = null
     public var failDownloadsContaining: String? = null
+    /** One switch for both reads and downloads, the way an app usually thinks of "fetching". */
+    public var failFetchesContaining: String? = null
+    /** iCloud Drive placeholders: `list()` reports every size as -1 until the file is downloaded. */
+    public var reportUnknownSizes: Boolean = false
+    /** Quiesce a run: a put whose path contains this suspends until [releasePuts]; [putStarted] tells the test it got there. */
+    public var gatePutsContaining: String? = null
+    public val putStarted: MutableStateFlow<String?> = MutableStateFlow(null)
+    private var putGate = CompletableDeferred<Unit>()
 
     public val prefetchLog: MutableList<List<String>> = mutableListOf()
     public val downloadLog: MutableList<String> = mutableListOf()
@@ -42,6 +52,11 @@ public class FakeCloudStorage(
     public var onPut: (String) -> Unit = {}
     public var listCalls: Int = 0
 
+    /** Lets every gated put continue. Call once; a new gate opens only if [gatePutsContaining] is set again. */
+    public fun releasePuts() {
+        putGate.complete(Unit)
+    }
+
     override suspend fun availability(): CloudAvailability = availability
 
     override suspend fun identityKey(): String? = identity
@@ -49,7 +64,7 @@ public class FakeCloudStorage(
     override suspend fun list(): List<RemoteFile> {
         listCalls += 1
         failListing?.let { throw CloudStorageException(it, "listing failed") }
-        return remote.map { (path, bytes) -> RemoteFile(path = path, size = bytes.size.toLong(), remoteId = ids[path]) }
+        return remote.map { (path, bytes) -> RemoteFile(path = path, size = if (reportUnknownSizes) -1L else bytes.size.toLong(), remoteId = ids[path]) }
     }
 
     override suspend fun exists(path: String): Boolean = path in remote
@@ -60,6 +75,7 @@ public class FakeCloudStorage(
     }
 
     override suspend fun writeBytes(path: String, bytes: ByteArray, mimeType: String, existingRemoteId: String?): String? {
+        gatePutsContaining?.let { if (path.contains(it)) { putStarted.value = path; putGate.await() } }
         failPutsContaining?.let { if (path.contains(it)) throw CloudStorageException(failError, "put failed: $path") }
         putLog += path
         onPut(path)
@@ -71,6 +87,7 @@ public class FakeCloudStorage(
     }
 
     override suspend fun readBytes(path: String, remoteId: String?): ByteArray? {
+        failFetchesContaining?.let { if (path.contains(it)) throw CloudStorageException(CloudError.Transport, "fetch failed: $path") }
         failReadsContaining?.let { if (path.contains(it)) throw CloudStorageException(CloudError.Transport, "read failed: $path") }
         return remote[path]
     }
@@ -80,6 +97,7 @@ public class FakeCloudStorage(
     }
 
     override suspend fun downloadFile(path: String, toLocalPath: String, remoteId: String?) {
+        failFetchesContaining?.let { if (path.contains(it)) throw CloudStorageException(CloudError.Transport, "fetch failed: $path") }
         failDownloadsContaining?.let { if (path.contains(it)) throw CloudStorageException(CloudError.Transport, "download failed: $path") }
         val bytes = remote[path] ?: throw CloudStorageException(CloudError.NotFound, "remote missing: $path")
         downloadLog += path

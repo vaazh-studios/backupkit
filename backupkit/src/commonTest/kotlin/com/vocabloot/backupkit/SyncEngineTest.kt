@@ -4,6 +4,8 @@ import com.vocabloot.backupkit.test.FakeCloudStorage
 import com.vocabloot.backupkit.test.MemoryRestoreRecordStore
 import com.vocabloot.backupkit.test.MemorySyncStateStore
 
+import kotlinx.coroutines.async
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -390,4 +392,32 @@ class SyncEngineTest {
         assertEquals(SyncOutcome.Unavailable(UnavailableReason.WriteHeld), h.run())
         assertEquals(WriteHold.RestoreIncomplete, h.engine().hold)
     }
+    @Test
+    fun unknown_remote_sizes_do_not_force_media_reuploads() = runTest {
+        val h = harness("a")
+        h.run()
+        h.storage.putLog.clear()
+        h.storage.reportUnknownSizes = true   // iCloud placeholders: the listing knows the files, not their sizes
+
+        val outcome = h.run()
+
+        assertIs<SyncOutcome.Synced>(outcome)
+        assertEquals(emptyList(), h.storage.putLog)
+    }
+
+    @Test
+    fun a_hold_set_while_a_put_is_gated_stops_the_run_before_the_next_put() = runTest {
+        val h = harness("a")
+        h.storage.gatePutsContaining = "items/a.png"
+        val engine = h.engine()
+        val run = async { engine.sync(h.snapshot()) { _, _ -> } }
+        h.storage.putStarted.first { it == "items/a.png" }
+
+        engine.setHold(WriteHold.RestoreRunning)
+        h.storage.releasePuts()
+
+        assertEquals(SyncOutcome.Unavailable(UnavailableReason.WriteHeld), run.await())
+        assertEquals(listOf("items/a.jpg", "items/a.png"), h.storage.putLog)
+    }
+
 }
