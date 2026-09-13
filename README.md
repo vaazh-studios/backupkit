@@ -13,6 +13,7 @@ Kotlin Multiplatform backup into the user's **own** cloud: iCloud on iOS (CloudK
 [![Kotlin](https://img.shields.io/badge/Kotlin-2.3.20-7F52FF?logo=kotlin&logoColor=white)](https://kotlinlang.org)
 [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
 [![klibs.io](https://img.shields.io/badge/klibs.io-listed-7F52FF?logo=kotlin&logoColor=white)](https://klibs.io/project/vaazh-studios/backupkit)
+[![Android Weekly](https://androidweekly.net/issues/issue-744/badge)](https://androidweekly.net/issues/issue-744)
 [![Docs](https://img.shields.io/badge/Docs-site-blue)](https://vaazh-studios.github.io/backupkit/)
 [![Discussions](https://img.shields.io/badge/GitHub-Discussions-2f7a4e)](https://github.com/vaazh-studios/backupkit/discussions)
 
