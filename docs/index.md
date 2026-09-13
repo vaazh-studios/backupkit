@@ -4,6 +4,8 @@ Kotlin Multiplatform backup into the user's **own** cloud: iCloud on iOS (CloudK
 
 ![BackupKit](assets/hero.png)
 
+Built for [Vocabloot](https://vocabloot.com), the photo vocabulary app for iOS and Android. Part of the [Vocabloot open-source libraries](https://vocabloot.com/oss).
+
 ## Start here
 
 1. [Setup, iOS](setup-ios.md): one entitlement, and the CloudKit schema step for Production builds.

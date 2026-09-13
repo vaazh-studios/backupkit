@@ -56,9 +56,9 @@ mavenPublishing {
     coordinates(group.toString(), "backupkit", version.toString())
     pom {
         name = "BackupKit"
-        description = "Kotlin Multiplatform backup into the user's own cloud: iCloud Drive on iOS, Google Drive app-data on Android. No server, no accounts."
+        description = "Kotlin Multiplatform backup into the user's own cloud: iCloud Drive on iOS, Google Drive app-data on Android. No server, no accounts. Built for Vocabloot (https://vocabloot.com)."
         inceptionYear = "2026"
-        url = "https://github.com/vaazh-studios/backupkit"
+        url = "https://vaazh-studios.github.io/backupkit/"
         licenses {
             license {
                 name = "The Apache License, Version 2.0"

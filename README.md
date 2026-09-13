@@ -2,6 +2,8 @@
 
 ![BackupKit: your app backs up into the user's own Google Drive or iCloud, no server](docs/assets/hero.png)
 
+Built for [Vocabloot](https://vocabloot.com), the photo vocabulary app for iOS and Android. Part of the [Vocabloot open-source libraries](https://vocabloot.com/oss).
+
 Kotlin Multiplatform backup into the user's **own** cloud: iCloud on iOS (CloudKit or iCloud Drive), the Google Drive app-data folder on Android. No server, no account on your side, no OAuth client setup on iOS.
 
 ![Android](https://img.shields.io/badge/Android-3DDC84?logo=android&logoColor=white)

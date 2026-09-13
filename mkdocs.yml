@@ -4,6 +4,7 @@ repo_url: https://github.com/vaazh-studios/backupkit
 repo_name: vaazh-studios/backupkit
 edit_uri: edit/main/docs/
 docs_dir: docs
+copyright: 'Built for <a href="https://vocabloot.com">Vocabloot</a>, the photo vocabulary app. Apache 2.0.'
 theme:
   name: material
   palette:
