@@ -21,7 +21,8 @@ own and nothing on klibs.io or Maven Central covers it.
 > `RestorePlacement` hook that moves a group's staged files into app data (Placed/Rejected),
 > progress in groups as well as files, `downloaded` vs `done` per file, and
 > `resume(resetAttempts = true)` for an explicit retry past the attempt cap. The API is
-> `@ExperimentalRestoreApi` until it has run on a device. Plan:
+> `@ExperimentalRestoreApi` while its shape settles; it has run on real devices in every Vocabloot
+> store build since 1.2. Plan:
 > `docs/superpowers/plans/2026-09-07-restore-engine-adoption.md` in the Vocabloot repo.
 
 ## 1. What it is

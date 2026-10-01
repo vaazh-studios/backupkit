@@ -141,7 +141,7 @@ storage.failPutsContaining = "photos/"              // then assert the outcome a
 
 ## Who's using it
 
-- [Vocabloot](https://vocabloot.com) ([App Store](https://apps.apple.com/app/id6792888619), [Google Play](https://play.google.com/store/apps/details?id=com.tntstudios.snaplingo)): wordbook, photos and doodles mirror through this exact code. BackupKit is that code, extracted; Vocabloot 1.2 is the first store build that carries it.
+- [Vocabloot](https://vocabloot.com) ([App Store](https://apps.apple.com/app/id6792888619), [Google Play](https://play.google.com/store/apps/details?id=com.tntstudios.snaplingo)): wordbook, photos and doodles mirror through this exact code. BackupKit is that code, extracted, and every Vocabloot store build since 1.2 runs on it, restore included, on the App Store and Google Play.
 
 Works with anything that gives you bytes or a file path: SQLDelight, Room, Okio, kotlinx-serialization, your own Ktor client on Android. Using BackupKit? Open a PR and add yourself.
 
@@ -157,7 +157,7 @@ Works with anything that gives you bytes or a file path: SQLDelight, Room, Okio,
 - Drive: files above 5 MB use Drive's resumable protocol in 8 MiB chunks, streamed from disk; the multipart path stays for small files.
 - Drive app-data counts against the user's Drive quota (Android Auto Backup does not).
 - iCloud on the simulator needs an iCloud login on the simulator.
-- `RestoreEngine` is `@ExperimentalRestoreApi`: its shape may still change in a minor release. Nothing
+- `RestoreEngine` is `@ExperimentalRestoreApi`: it runs on real devices in Vocabloot's store builds, but its shape may still change in a minor release. Nothing
   Vocabloot-specific lives in it: files carry an opaque group and the app supplies a `RestorePlacement`.
 - The sample app exercises `ICloudStorage` and `GoogleDriveStorage`; `USE_CLOUDKIT` switches it to CloudKit.
 - Not included: scheduling, encryption, restore-into-your-model, any UI, Dropbox/OneDrive

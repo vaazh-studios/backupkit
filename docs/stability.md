@@ -6,7 +6,7 @@ Semantic versioning from 1.0. Before 1.0, a minor version may change the API; th
 
 ## Experimental APIs
 
-`@ExperimentalRestoreApi` marks `RestoreEngine` and its types. Experimental means: the shape can change in a minor version. Opt in with `@OptIn(ExperimentalRestoreApi::class)`.
+`@ExperimentalRestoreApi` marks `RestoreEngine` and its types. It runs on real devices in Vocabloot's store builds; experimental means only that the shape can change in a minor version. Opt in with `@OptIn(ExperimentalRestoreApi::class)`.
 
 ## Requirements
 
