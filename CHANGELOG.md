@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.3.1 (unreleased)
+## 0.3.1 (2026-11-12)
 
 A hash-compared entry that another writer replaced is no longer left stale. Found in Vocabloot: one iPhone ran a store build (CloudKit Production) and an Xcode build (Development) with one state file; the other environment kept an old `manifest.json` because the cached hash still matched the device's own data, while new photos uploaded and a fresh marker was written over it (marker 119 words, manifest 93).
 
