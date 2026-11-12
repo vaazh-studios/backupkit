@@ -43,6 +43,10 @@ Importing the files into your own data structures is your code; BackupKit never 
 
 `RestoreEngine` writes its record after every file. On the next launch, `load()` the record store; if a record exists, call `resume()` instead of `start()`. `resume()` re-probes the source first and answers `RestoreOutcome.Failed(SourceChanged)` when the remote set is no longer the one the user accepted.
 
+## Leaving the app mid-restore (iOS)
+
+`RestoreEngine` calls `CloudStorage.prefetch` with every pending file before it downloads them one by one. `CloudKitStorage` hands iCloud the whole list at once as long-lived fetches, so iCloud keeps downloading while the app is suspended or closed. The next `prefetch` (the next `resume()`) reattaches those fetches and moves what they brought into the cache, so those files are not downloaded again. The app still needs to run again to place them: resume the restore when it comes back to the foreground. Hold `UIApplication.beginBackgroundTask` around a run to finish a short one after a quick app switch.
+
 ## Retry past the attempt cap
 
 Optional files get three attempts per run. An explicit "try again" from the user should call `resume(resetAttempts = true)` so files that hit the cap are tried again; a silent background resume should not.

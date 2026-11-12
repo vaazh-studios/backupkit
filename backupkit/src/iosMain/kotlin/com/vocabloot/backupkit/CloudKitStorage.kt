@@ -1,15 +1,19 @@
 package com.vocabloot.backupkit
 
 import com.vocabloot.backupkit.cloudkit.CheckpointScope
+import com.vocabloot.backupkit.cloudkit.PrefetchPlan
 import com.vocabloot.backupkit.cloudkit.RecordChange
 import com.vocabloot.backupkit.cloudkit.ZoneCheckpoint
 import com.vocabloot.backupkit.internal.LocalFiles
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.coroutines.CancellableContinuation
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.Semaphore
@@ -29,6 +33,7 @@ import platform.CloudKit.CKFetchRecordZoneChangesOperation
 import platform.CloudKit.CKFetchRecordsOperation
 import platform.CloudKit.CKModifyRecordZonesOperation
 import platform.CloudKit.CKModifyRecordsOperation
+import platform.CloudKit.CKOperation
 import platform.CloudKit.CKOperationConfiguration
 import platform.CloudKit.CKPartialErrorsByItemIDKey
 import platform.CloudKit.CKRecord
@@ -38,6 +43,8 @@ import platform.CloudKit.CKRecordZone
 import platform.CloudKit.CKRecordZoneID
 import platform.CloudKit.CKServerChangeToken
 import platform.CloudKit.accountStatusWithCompletionHandler
+import platform.CloudKit.fetchAllLongLivedOperationIDsWithCompletionHandler
+import platform.CloudKit.fetchLongLivedOperationWithID
 import platform.CloudKit.fetchUserRecordIDWithCompletionHandler
 import platform.CloudKit.privateCloudDatabase
 import platform.Foundation.NSData
@@ -70,7 +77,9 @@ import kotlin.coroutines.resumeWithException
  *   stands for) and never downloads assets.
  * - [readBytes] and [downloadFile] serve from a local cache under [cacheDirectory]
  *   when the cached copy matches the record's change tag; [prefetch] fills that
- *   cache eight records per request, two requests in flight.
+ *   cache by handing iCloud every missing record at once as long-lived fetches, so
+ *   the download goes on while the app is suspended or closed; the next [prefetch]
+ *   reattaches those fetches and moves what they brought into the cache.
  * - Pass [environment] as `"development"` for debug builds and `"production"`
  *   otherwise: Xcode's debug builds talk to the Development container, and the
  *   two must never share a checkpoint on one device.
@@ -98,6 +107,9 @@ public class CloudKitStorage(
 
     private val mutex = Mutex()
     private val prefetchGate = Semaphore(MAX_FETCHES_IN_FLIGHT)
+
+    /** Long-lived prefetches this instance is still waiting on: reattaching one would take over its callbacks. */
+    private val ownPrefetches = MutableStateFlow(emptySet<String>())
     private var checkpoint: ZoneCheckpoint? = null
     private var zoneReady = false
     private var cachedUserRecordName: String? = null
@@ -308,13 +320,34 @@ public class CloudKitStorage(
 
     override suspend fun prefetch(paths: List<String>) {
         runCatching {
+            // What iCloud brought down while the app was away goes into the cache first, so it is not asked for again.
+            reattachPrefetches()
+            val batches = PrefetchPlan.batches(paths.map(ZoneCheckpoint::recordName), isCached = { cachedFile(it) != null })
+            // Every batch at once and long-lived: a fetch the app has not submitted yet would not run while it is
+            // suspended, so iCloud gets the whole list now and its daemon queues the operations itself.
             coroutineScope {
-                paths.map(ZoneCheckpoint::recordName)
-                    .filter { cachedFile(it) == null }
-                    .chunked(FETCH_BATCH)
-                    .map { batch -> async { prefetchGate.withPermit { runCatching { fetchRecords(batch) } } } }
-                    .awaitAll()
+                batches.map { batch -> async { runCatching { fetchRecords(batch, longLived = true) } } }.awaitAll()
             }
+        }.onFailure { if (it is CancellationException) throw it }
+    }
+
+    /**
+     * Long-lived prefetches from an earlier run, finished or still going: each is re-added with this instance's
+     * per-record block (CloudKit replays the results it kept), and its assets move into the cache. Uploads and
+     * operations of other libraries are left alone. Best effort: a failure here only means a download later.
+     */
+    private suspend fun reattachPrefetches() {
+        val ids = suspendCancellableCoroutine<List<String>> { cont ->
+            container.fetchAllLongLivedOperationIDsWithCompletionHandler { ids, _ -> cont.resume(ids.orEmpty().filterIsInstance<String>()) }
+        }
+        for (id in ids) {
+            val operation = suspendCancellableCoroutine<CKOperation?> { cont ->
+                container.fetchLongLivedOperationWithID(id) { op, _ -> cont.resume(op) }
+            }
+            val fetch = operation as? CKFetchRecordsOperation ?: continue
+            if (!PrefetchPlan.isOwnPrefetch(fetch.name) || id in ownPrefetches.value) continue
+            runCatching { awaitFetch(fetch, item = "reattached prefetch $id") }
+                .onFailure { if (it is CancellationException) throw it }
         }
     }
 
@@ -329,43 +362,79 @@ public class CloudKitStorage(
     private class Fetched(val cachePath: String)
 
     /**
-     * One `CKFetchRecordsOperation` for up to [FETCH_BATCH] records. Each asset is
+     * One `CKFetchRecordsOperation` for [recordNames]: a prefetch batch (long-lived) or a single record. Each asset is
      * moved out of CloudKit's staging area inside the per-record block, because the
      * system deletes staged files on its own schedule.
      */
-    private suspend fun fetchRecords(recordNames: List<String>): Map<String, Fetched> {
+    private suspend fun fetchRecords(recordNames: List<String>, longLived: Boolean = false): Map<String, Fetched> {
         ensureZone()
-        val fetched = mutableMapOf<String, Fetched>()
-        val upserts = mutableListOf<RecordChange>()
-        execute<Unit> { cont ->
-            CKFetchRecordsOperation(recordIDs = recordNames.map { CKRecordID(recordName = it, zoneID = zoneId) }).apply {
-                desiredKeys = listOf(FIELD_PATH, FIELD_SIZE, FIELD_CONTENT)
-                qualityOfService = NSQualityOfServiceUserInitiated
-                perRecordCompletionBlock = { record, recordId, error ->
-                    val name = recordId?.recordName
-                    val stagedPath = (record?.valueForKey(FIELD_CONTENT) as? CKAsset)?.fileURL?.path
-                    if (name != null && record != null && stagedPath != null && error == null) {
-                        val target = cachePath(name, record.recordChangeTag)
-                        LocalFiles.move(stagedPath, target)
-                        fetched[name] = Fetched(target)
-                        upserts += RecordChange(
-                            recordName = name,
-                            path = record.valueForKey(FIELD_PATH) as? String ?: ZoneCheckpoint.path(name),
-                            size = (record.valueForKey(FIELD_SIZE) as? NSNumber)?.longLongValue ?: (LocalFiles.fileSize(target) ?: 0L),
-                            changeTag = record.recordChangeTag,
-                        )
+        val batch = FetchedBatch()
+        val submitted = mutableListOf<String>()
+        try {
+            execute<Unit> { cont ->
+                CKFetchRecordsOperation(recordIDs = recordNames.map { CKRecordID(recordName = it, zoneID = zoneId) }).apply {
+                    desiredKeys = listOf(FIELD_PATH, FIELD_SIZE, FIELD_CONTENT)
+                    qualityOfService = NSQualityOfServiceUserInitiated
+                    if (longLived) {
+                        // Runs on in iCloud's daemon while the app is suspended or closed; found again by name.
+                        configuration = CKOperationConfiguration().apply { setLongLived(true) }
+                        name = PrefetchPlan.OPERATION_NAME
+                        operationID?.let { id ->
+                            submitted += id
+                            ownPrefetches.update { it + id }
+                        }
                     }
-                }
-                fetchRecordsCompletionBlock = { _, error ->
-                    when {
-                        error == null || error.isPartialOfUnknownItems() -> cont.resume(Unit)
-                        else -> cont.resumeWithException(mapped(error, recordNames.joinToString()))
-                    }
+                    attach(batch, cont, item = recordNames.joinToString())
                 }
             }
+        } finally {
+            if (submitted.isNotEmpty()) ownPrefetches.update { it - submitted.toSet() }
         }
-        if (upserts.isNotEmpty()) updateCheckpoint { cp -> upserts.fold(cp) { acc, c -> acc.upsert(c.recordName, c.path, c.size, c.changeTag) } }
-        return fetched
+        batch.commit()
+        return batch.fetched
+    }
+
+    /** Re-adds a long-lived fetch from an earlier run; its replayed results land in the cache like a fresh fetch. */
+    private suspend fun awaitFetch(operation: CKFetchRecordsOperation, item: String) {
+        ensureZone()
+        val batch = FetchedBatch()
+        runOnce<Unit> { cont -> operation.apply { attach(batch, cont, item) } }
+        batch.commit()
+    }
+
+    /** The per-record and completion blocks every fetch uses: each asset leaves CloudKit's staging area at once. */
+    private fun CKFetchRecordsOperation.attach(batch: FetchedBatch, cont: CancellableContinuation<Unit>, item: String) {
+        perRecordCompletionBlock = { record, recordId, error ->
+            val name = recordId?.recordName
+            val stagedPath = (record?.valueForKey(FIELD_CONTENT) as? CKAsset)?.fileURL?.path
+            if (name != null && record != null && stagedPath != null && error == null) {
+                val target = cachePath(name, record.recordChangeTag)
+                LocalFiles.move(stagedPath, target)
+                batch.fetched[name] = Fetched(target)
+                batch.upserts += RecordChange(
+                    recordName = name,
+                    path = record.valueForKey(FIELD_PATH) as? String ?: ZoneCheckpoint.path(name),
+                    size = (record.valueForKey(FIELD_SIZE) as? NSNumber)?.longLongValue ?: (LocalFiles.fileSize(target) ?: 0L),
+                    changeTag = record.recordChangeTag,
+                )
+            }
+        }
+        fetchRecordsCompletionBlock = { _, error ->
+            when {
+                error == null || error.isPartialOfUnknownItems() -> cont.resume(Unit)
+                else -> cont.resumeWithException(mapped(error, item))
+            }
+        }
+    }
+
+    /** What one fetch brought: the cached files, and the records the checkpoint learns about. */
+    private inner class FetchedBatch {
+        val fetched = mutableMapOf<String, Fetched>()
+        val upserts = mutableListOf<RecordChange>()
+
+        suspend fun commit() {
+            if (upserts.isNotEmpty()) updateCheckpoint { cp -> upserts.fold(cp) { acc, c -> acc.upsert(c.recordName, c.path, c.size, c.changeTag) } }
+        }
     }
 
     private fun cachePath(recordName: String, changeTag: String?): String = "$cacheDirectory/$ASSETS_DIR/$recordName@${changeTag ?: "none"}"
@@ -470,7 +539,6 @@ public class CloudKitStorage(
         const val FIELD_CONTENT = "content"
         const val ASSETS_DIR = "assets"
         const val OUTBOX_DIR = "outbox"
-        const val FETCH_BATCH = 8
         const val MAX_FETCHES_IN_FLIGHT = 2
         const val MAX_ATTEMPTS = 2
         const val DEFAULT_RETRY_SECONDS = 2.0
