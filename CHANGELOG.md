@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.3.2 (2026-11-12)
+
+Fixes a crash loop in 0.3.1. Found in Vocabloot: an app closed during a restore's photo download aborted on every later launch.
+
+- `CloudKitStorage`: the per-record and completion blocks of a record fetch never throw. CloudKit replays a finished long-lived prefetch when `prefetch` reattaches it, but iOS may already have deleted the replayed records' staged asset files; moving a missing file threw inside the CloudKit callback, which aborts a Kotlin/Native app, and the fetch never completed, so the next launch replayed it again. A record whose staged file is gone, or cannot be moved, is now skipped and fetched again by the same `prefetch`. A completion block called again, or after the wait was cancelled, does nothing.
+- No API change; drop-in for 0.3.1.
+
 ## 0.3.1 (2026-11-12)
 
 A hash-compared entry that another writer replaced is no longer left stale. Found in Vocabloot: one iPhone ran a store build (CloudKit Production) and an Xcode build (Development) with one state file; the other environment kept an old `manifest.json` because the cached hash still matched the device's own data, while new photos uploaded and a fresh marker was written over it (marker 119 words, manifest 93).

@@ -3,6 +3,7 @@ package com.vocabloot.backupkit
 import com.vocabloot.backupkit.cloudkit.CheckpointScope
 import com.vocabloot.backupkit.cloudkit.PrefetchPlan
 import com.vocabloot.backupkit.cloudkit.RecordChange
+import com.vocabloot.backupkit.cloudkit.StagedAssets
 import com.vocabloot.backupkit.cloudkit.ZoneCheckpoint
 import com.vocabloot.backupkit.internal.LocalFiles
 import kotlinx.cinterop.ExperimentalForeignApi
@@ -402,27 +403,39 @@ public class CloudKitStorage(
         batch.commit()
     }
 
-    /** The per-record and completion blocks every fetch uses: each asset leaves CloudKit's staging area at once. */
+    /**
+     * The per-record and completion blocks every fetch uses: each asset leaves CloudKit's staging area at once.
+     * Neither block may throw: an exception inside a CloudKit callback aborts the app (see [StagedAssets]).
+     */
     private fun CKFetchRecordsOperation.attach(batch: FetchedBatch, cont: CancellableContinuation<Unit>, item: String) {
         perRecordCompletionBlock = { record, recordId, error ->
-            val name = recordId?.recordName
-            val stagedPath = (record?.valueForKey(FIELD_CONTENT) as? CKAsset)?.fileURL?.path
-            if (name != null && record != null && stagedPath != null && error == null) {
-                val target = cachePath(name, record.recordChangeTag)
-                LocalFiles.move(stagedPath, target)
-                batch.fetched[name] = Fetched(target)
-                batch.upserts += RecordChange(
-                    recordName = name,
-                    path = record.valueForKey(FIELD_PATH) as? String ?: ZoneCheckpoint.path(name),
-                    size = (record.valueForKey(FIELD_SIZE) as? NSNumber)?.longLongValue ?: (LocalFiles.fileSize(target) ?: 0L),
-                    changeTag = record.recordChangeTag,
-                )
+            runCatching {
+                val name = recordId?.recordName
+                val stagedPath = (record?.valueForKey(FIELD_CONTENT) as? CKAsset)?.fileURL?.path
+                if (name != null && record != null && stagedPath != null && error == null) {
+                    val target = cachePath(name, record.recordChangeTag)
+                    // A replayed long-lived fetch may hand back a staged file iOS already deleted: skip it, fetched again later.
+                    if (StagedAssets.moveIntoCache(stagedPath, target, LocalFiles::exists, LocalFiles::move)) {
+                        batch.fetched[name] = Fetched(target)
+                        batch.upserts += RecordChange(
+                            recordName = name,
+                            path = record.valueForKey(FIELD_PATH) as? String ?: ZoneCheckpoint.path(name),
+                            size = (record.valueForKey(FIELD_SIZE) as? NSNumber)?.longLongValue ?: (LocalFiles.fileSize(target) ?: 0L),
+                            changeTag = record.recordChangeTag,
+                        )
+                    }
+                }
             }
         }
         fetchRecordsCompletionBlock = { _, error ->
-            when {
-                error == null || error.isPartialOfUnknownItems() -> cont.resume(Unit)
-                else -> cont.resumeWithException(mapped(error, item))
+            // Resumed once at most: a second call (a replay) or a cancelled wait must not throw inside the callback.
+            runCatching {
+                if (cont.isActive) {
+                    when {
+                        error == null || error.isPartialOfUnknownItems() -> cont.resume(Unit)
+                        else -> cont.resumeWithException(mapped(error, item))
+                    }
+                }
             }
         }
     }

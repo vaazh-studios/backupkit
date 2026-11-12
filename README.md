@@ -38,7 +38,7 @@ Every app with a wordbook or a journal eventually needs "a new phone should not 
 ## BackupKit 101
 
 ```kotlin
-// libs.versions.toml            backupkit = { module = "com.vocabloot:backupkit", version = "0.3.1" }
+// libs.versions.toml            backupkit = { module = "com.vocabloot:backupkit", version = "0.3.2" }
 // build.gradle.kts (shared)     commonMain.dependencies { implementation(libs.backupkit) }
 ```
 
