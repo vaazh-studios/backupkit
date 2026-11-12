@@ -18,14 +18,21 @@ public data class SyncState(
     val lastEntryCount: Int = 0,
     /** [WriteHold] name; a string so an unknown future value degrades to [WriteHold.None] on read. */
     val hold: String = "None",
+    /** [CloudStorage.stateScope] the entries were cached under; a different scope resets them. Since 0.3.1. */
+    val scope: String = "",
 )
 
-/** [hash] is sha256-hex for hash-compared entries, null for size-compared ones (identity = path + size). */
+/**
+ * [hash] is sha256-hex for hash-compared entries, null for size-compared ones (identity = path + size).
+ * [remoteVersion] is the [RemoteFile.version] this device last saw for the file it wrote; null until the listing after
+ * its upload reports one. Since 0.3.1.
+ */
 @Serializable
 public data class SyncedEntry(
     val size: Long,
     val hash: String? = null,
     val remoteId: String? = null,
+    val remoteVersion: String? = null,
 )
 
 /** Persists [SyncState] between runs. Implement it yourself or use [FileSyncStateStore]. */

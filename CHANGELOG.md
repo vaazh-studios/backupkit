@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.3.1 (unreleased)
+
+A hash-compared entry that another writer replaced is no longer left stale. Found in Vocabloot: one iPhone ran a store build (CloudKit Production) and an Xcode build (Development) with one state file; the other environment kept an old `manifest.json` because the cached hash still matched the device's own data, while new photos uploaded and a fresh marker was written over it (marker 119 words, manifest 93).
+
+- `SyncEngine` uploads a hash-compared entry again when the listed size differs from the snapshot's, whatever the cached hash says.
+- `RemoteFile.version` (CloudKit: the record change tag; Drive: the file `version`) and `SyncedEntry.remoteVersion`: a hash-compared entry whose remote version moved since this device last saw it is uploaded again, which catches a same-size replacement. The version is adopted from the listing after the device's own upload (when the size matches). On Drive a server-side version bump (for example metadata) can cost one extra upload of a small file.
+- `CloudStorage.stateScope()` (default `""`; `CloudKitStorage` returns its `environment`) is stored in `SyncState.scope`. A scope change drops the cached entries and keeps the write hold: hash-compared entries upload once, media are trusted by size. A state written by 0.3.0 has an empty scope, so a `CloudKitStorage` with an environment resets it once.
+- `backupkit-test`: `FakeCloudStorage` gains `reportVersions`, `scope` and `replaceByAnotherWriter()`.
+- **Binary-incompatible for callers of the generated `copy`/`componentN` of `RemoteFile`, `SyncedEntry` and `SyncState`** (new trailing fields with defaults; source-compatible). Recompile against 0.3.1. A custom `CloudStorage` needs no change.
+
 ## 0.3.0 (2026-09-11)
 
 - `SyncPolicy.shrinkGuard` (on by default: more than half of at least four remote entries) refuses a run that would delete most of the backup and answers the new `UnavailableReason.ShrinkSuspected`; `SyncSnapshot.allowShrink = true` lifts it for a confirmed run. **Source-breaking for exhaustive `when` over `UnavailableReason`; `SyncPolicy` and `SyncSnapshot` gained constructor parameters, so recompile against 0.3.0.**

@@ -38,7 +38,7 @@ internal class DriveRestClient(
     private val chunkBytes: Int = DEFAULT_CHUNK_BYTES,
 ) {
     @Serializable
-    data class DriveFile(val id: String, val name: String, val size: String? = null, val modifiedTime: String? = null)
+    data class DriveFile(val id: String, val name: String, val size: String? = null, val modifiedTime: String? = null, val version: String? = null)
 
     @Serializable
     private data class FileList(val nextPageToken: String? = null, val files: List<DriveFile> = emptyList())
@@ -59,7 +59,7 @@ internal class DriveRestClient(
                     bearerAuth(token)
                     url {
                         parameters.append("spaces", "appDataFolder")
-                        parameters.append("fields", "nextPageToken,files(id,name,size,modifiedTime)")
+                        parameters.append("fields", "nextPageToken,files(id,name,size,modifiedTime,version)")
                         parameters.append("pageSize", "1000")
                         pageToken?.let { parameters.append("pageToken", it) }
                     }

@@ -70,7 +70,7 @@ internal class ZoneCheckpoint private constructor(private val file: ZoneCheckpoi
     /** Expired token, missing zone, or a zone the user deleted: same scope, fetch from the beginning. */
     fun reset(): ZoneCheckpoint = ZoneCheckpoint(ZoneCheckpointFile(scope = file.scope))
 
-    fun toRemoteFiles(): List<RemoteFile> = file.records.values.map { RemoteFile(path = it.path, size = it.size, remoteId = null) }
+    fun toRemoteFiles(): List<RemoteFile> = file.records.values.map { RemoteFile(path = it.path, size = it.size, remoteId = null, version = it.changeTag) }
 
     companion object {
         private val json = Json { ignoreUnknownKeys = true; encodeDefaults = true }

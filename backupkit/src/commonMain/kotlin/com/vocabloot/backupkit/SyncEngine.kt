@@ -86,17 +86,21 @@ public class SyncEngine(
         val remote = storage.list().groupBy { it.path }.mapValues { (_, dupes) -> dupes.first() }
         var state = stateStore.load()
         val identity = storage.identityKey() ?: remote[policy.markerPath]?.remoteId ?: ""
+        val scope = storage.stateScope()
         if (state.provider != storage.provider.name || state.identityKey != identity) {
             logI(TAG) { "identity changed ('${state.identityKey}' -> '$identity'); resetting sync state" }
-            state = SyncState(provider = storage.provider.name, identityKey = identity, hold = state.hold)
+            state = SyncState(provider = storage.provider.name, identityKey = identity, hold = state.hold, scope = scope)
+        } else if (state.scope != scope) {
+            // Same account, another remote world (CloudKit Development vs Production): its cache says nothing about this one.
+            logI(TAG) { "state scope changed ('${state.scope}' -> '$scope'); dropping cached entries" }
+            state = state.copy(entries = emptyMap(), scope = scope)
         }
         state = state.copy(
-            entries = state.entries.filterKeys { it in remote }.mapValues { (path, cached) ->
-                cached.copy(remoteId = remote.getValue(path).remoteId ?: cached.remoteId)
-            } + remote.filterKeys { it !in state.entries }.mapValues { (_, r) ->
-                // Present remotely but unknown to us: trust size-compared entries by size, force hashed re-upload.
-                SyncedEntry(size = r.size, hash = null, remoteId = r.remoteId)
-            },
+            entries = state.entries.filterKeys { it in remote }.mapValues { (path, cached) -> cached.reconciledWith(remote.getValue(path)) } +
+                remote.filterKeys { it !in state.entries }.mapValues { (_, r) ->
+                    // Present remotely but unknown to us: trust size-compared entries by size, force hashed re-upload.
+                    SyncedEntry(size = r.size, hash = null, remoteId = r.remoteId, remoteVersion = r.version)
+                },
         )
 
         // 2) Desired set.
@@ -111,7 +115,12 @@ public class SyncEngine(
             val remoteSize = remote[d.path]?.size
             cached == null || !(remoteSize == null || remoteSize < 0 || remoteSize == d.size) || cached.size != d.size
         }
-        val hashedUploads = present.filter { it.hash != null }.filter { d -> state.entries[d.path]?.hash != d.hash }
+        // A hashed entry also uploads when the cloud's copy is not the size this snapshot's bytes are: another build or
+        // device replaced it while our cached hash still matches our own data (0.3.0 left such a file stale for good).
+        val hashedUploads = present.filter { it.hash != null }.filter { d ->
+            val remoteSize = remote[d.path]?.size
+            state.entries[d.path]?.hash != d.hash || (remoteSize != null && remoteSize >= 0 && remoteSize != d.size)
+        }
         val markerNeeded = marker != null && marker.source !is SyncSource.Absent &&
             (sizeUploads.isNotEmpty() || hashedUploads.isNotEmpty() || policy.markerPath !in remote)
         val deletes = state.entries.keys.filter { path -> path != policy.markerPath && path !in declared }
@@ -179,6 +188,24 @@ public class SyncEngine(
         persist(state)
         logI(TAG) { "sync ok entries=${present.size} uploads=${uploads.size} deletes=${deletes.size}" }
         return SyncOutcome.Synced(entryCount = present.size)
+    }
+
+    /**
+     * The cached entry against the listed file. A version that moved since this device last saw it means another writer
+     * replaced the file: the cached hash no longer describes the cloud, so a hashed entry uploads again. A version seen
+     * for the first time is adopted when the size is the one this device wrote (the listing after our own upload).
+     */
+    private fun SyncedEntry.reconciledWith(listed: RemoteFile): SyncedEntry {
+        val withId = copy(remoteId = listed.remoteId ?: remoteId)
+        val version = listed.version ?: return withId
+        return when {
+            remoteVersion == null -> if (listed.size < 0 || listed.size == size) withId.copy(remoteVersion = version) else withId.copy(hash = null)
+            remoteVersion != version -> {
+                logI(TAG) { "remote file replaced by another writer; uploading ours again if it is hash-compared" }
+                withId.copy(hash = null, size = if (listed.size >= 0) listed.size else size, remoteVersion = version)
+            }
+            else -> withId
+        }
     }
 
     /** Saves [state] while keeping whatever [WriteHold] was persisted meanwhile: the hold is owned by the app, not by a run. */

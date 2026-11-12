@@ -23,6 +23,14 @@ public interface CloudStorage {
      */
     public suspend fun identityKey(): String?
 
+    /**
+     * Which remote world this transport talks to beyond the account, when one account can see more than one: CloudKit's
+     * Development and Production environments share the user record name but are separate clouds. Stored in the sync
+     * state; a change resets the cached entries (keeping the write hold), so one device that runs both kinds of build
+     * never trusts one environment's cache in the other. Empty by default. Cheap, never touches the network. Since 0.3.1.
+     */
+    public fun stateScope(): String = ""
+
     /** Every file, deduplicated by path (newest wins). */
     public suspend fun list(): List<RemoteFile>
 

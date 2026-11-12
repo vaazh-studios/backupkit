@@ -488,4 +488,87 @@ class SyncEngineTest {
         assertEquals(SyncOutcome.Unavailable(UnavailableReason.RestorePending), fresh.run())
     }
 
+
+    // region 0.3.1: a hashed entry another build or device replaced is uploaded again
+
+    @Test
+    fun a_hashed_entry_whose_remote_size_differs_uploads_again_although_the_cached_hash_matches() = runTest {
+        val h = harness("a", "b")
+        h.run()
+        // Another build (CloudKit's other environment) or device left an older manifest of another length.
+        h.storage.remote["manifest.json"] = """{"items":["a"],"favorite":false}""".encodeToByteArray()
+        h.storage.putLog.clear()
+
+        assertIs<SyncOutcome.Synced>(h.run())
+
+        assertEquals(listOf("manifest.json", "backup.json"), h.storage.putLog, "manifest first, then the marker")
+        assertEquals(h.snapshot().entries.first { it.path == "manifest.json" }.size, h.storage.remote.getValue("manifest.json").size.toLong())
+    }
+
+    @Test
+    fun a_same_size_replacement_is_caught_by_the_remote_version() = runTest {
+        val h = harness("a")
+        h.storage.reportVersions = true
+        h.run()
+        h.run() // the listing after our own upload: versions adopted, nothing uploads
+        h.storage.putLog.clear()
+        val ours = h.storage.remote.getValue("manifest.json")
+        h.storage.replaceByAnotherWriter("manifest.json", ours.copyOf().also { it[it.size - 2] = 'X'.code.toByte() })
+
+        h.run()
+
+        assertEquals(listOf("manifest.json", "backup.json"), h.storage.putLog)
+        assertTrue(ours.contentEquals(h.storage.remote.getValue("manifest.json")))
+        h.storage.putLog.clear()
+        h.run(); h.run()
+        assertTrue(h.storage.putLog.isEmpty(), "our own write is adopted, not mistaken for another writer: ${h.storage.putLog}")
+    }
+
+    @Test
+    fun versions_without_a_change_upload_nothing() = runTest {
+        val h = harness("a", "b")
+        h.storage.reportVersions = true
+        h.run()
+        h.storage.putLog.clear()
+
+        h.run(); h.run()
+
+        assertTrue(h.storage.putLog.isEmpty(), "${h.storage.putLog}")
+    }
+
+    @Test
+    fun a_state_scope_change_drops_cached_entries_and_keeps_the_hold() = runTest {
+        val h = harness("a")
+        h.storage.scope = "production"
+        h.run()
+        h.storage.putLog.clear()
+        // Same phone, same iCloud user, an Xcode build: the Development environment holds an older manifest of the same length.
+        h.storage.scope = "development"
+        h.storage.remote["manifest.json"] = h.storage.remote.getValue("manifest.json").copyOf().also { it[it.size - 2] = 'X'.code.toByte() }
+        h.stateStore.save(h.stateStore.load().copy(hold = WriteHold.RestoreIncomplete.name))
+        assertEquals(SyncOutcome.Unavailable(UnavailableReason.WriteHeld), h.run(), "the hold survives the scope change")
+        h.engine().setHold(WriteHold.None)
+
+        assertIs<SyncOutcome.Synced>(h.run())
+
+        assertEquals("development", h.stateStore.load().scope)
+        assertTrue("manifest.json" in h.storage.putLog, "hashed entries upload once in the new scope: ${h.storage.putLog}")
+        assertFalse("items/a.jpg" in h.storage.putLog, "media are trusted by size from the listing")
+    }
+
+    @Test
+    fun a_state_from_before_scopes_resets_once_for_a_scoped_transport() = runTest {
+        val h = harness("a")
+        h.run()
+        h.storage.putLog.clear()
+        h.storage.scope = "production"
+
+        h.run()
+        assertEquals(listOf("manifest.json", "meta.json", "backup.json"), h.storage.putLog)
+        h.storage.putLog.clear()
+        h.run()
+        assertTrue(h.storage.putLog.isEmpty())
+    }
+
+    // endregion
 }

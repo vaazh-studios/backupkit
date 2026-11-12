@@ -47,7 +47,7 @@ public class GoogleDriveStorage(
                 dupes.filter { it.id != newest.id }.forEach { dupe ->
                     runCatching { rest.delete(dupe.id) }.onFailure { logW(TAG, it) { "dedupe delete failed for $name" } }
                 }
-                add(RemoteFile(path = name, size = newest.size?.toLongOrNull() ?: -1L, remoteId = newest.id))
+                add(RemoteFile(path = name, size = newest.size?.toLongOrNull() ?: -1L, remoteId = newest.id, version = newest.version))
             }
         }
     }

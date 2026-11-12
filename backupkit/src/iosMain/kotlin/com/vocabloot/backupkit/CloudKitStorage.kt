@@ -127,6 +127,9 @@ public class CloudKitStorage(
         return name
     }
 
+    /** The environment: Development and Production are separate clouds under one user record name. */
+    override fun stateScope(): String = environment
+
     private suspend fun scope(): CheckpointScope = CheckpointScope(
         container = container.containerIdentifier ?: "default",
         zone = zoneName,

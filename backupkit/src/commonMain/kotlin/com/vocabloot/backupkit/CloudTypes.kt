@@ -48,5 +48,7 @@ public class CloudStorageException(
 /**
  * One file as the cloud sees it. [remoteId] is Drive's file id, null on iCloud.
  * [size] is -1 when unknown (an iCloud placeholder that has not been downloaded yet).
+ * [version] changes whenever ANY writer replaces the file: CloudKit's record change tag, Drive's file version; null when
+ * the transport has none (iCloud Drive). Since 0.3.1.
  */
-public data class RemoteFile(val path: String, val size: Long, val remoteId: String?)
+public data class RemoteFile(val path: String, val size: Long, val remoteId: String?, val version: String? = null)

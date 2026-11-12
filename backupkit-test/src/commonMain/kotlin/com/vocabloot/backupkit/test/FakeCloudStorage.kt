@@ -39,6 +39,11 @@ public class FakeCloudStorage(
     public var failFetchesContaining: String? = null
     /** iCloud Drive placeholders: `list()` reports every size as -1 until the file is downloaded. */
     public var reportUnknownSizes: Boolean = false
+    /** CloudKit / Drive semantics: `list()` reports a [RemoteFile.version] that changes on every write by anyone. */
+    public var reportVersions: Boolean = false
+    /** What [stateScope] answers, like CloudKit's environment. */
+    public var scope: String = ""
+    private val versions = mutableMapOf<String, Int>()
     /** Quiesce a run: a put whose path contains this suspends until [releasePuts]; [putStarted] tells the test it got there. */
     public var gatePutsContaining: String? = null
     public val putStarted: MutableStateFlow<String?> = MutableStateFlow(null)
@@ -61,10 +66,25 @@ public class FakeCloudStorage(
 
     override suspend fun identityKey(): String? = identity
 
+    override fun stateScope(): String = scope
+
+    /** Replaces [path] as ANOTHER writer would (another build or device): bytes and version change, no log entry. */
+    public fun replaceByAnotherWriter(path: String, bytes: ByteArray) {
+        remote[path] = bytes
+        versions[path] = (versions[path] ?: 0) + 1
+    }
+
     override suspend fun list(): List<RemoteFile> {
         listCalls += 1
         failListing?.let { throw CloudStorageException(it, "listing failed") }
-        return remote.map { (path, bytes) -> RemoteFile(path = path, size = if (reportUnknownSizes) -1L else bytes.size.toLong(), remoteId = ids[path]) }
+        return remote.map { (path, bytes) ->
+            RemoteFile(
+                path = path,
+                size = if (reportUnknownSizes) -1L else bytes.size.toLong(),
+                remoteId = ids[path],
+                version = if (reportVersions) "v${versions[path] ?: 0}" else null,
+            )
+        }
     }
 
     override suspend fun exists(path: String): Boolean = path in remote
@@ -81,6 +101,7 @@ public class FakeCloudStorage(
         onPut(path)
         val created = !remote.containsKey(path)
         remote[path] = bytes
+        versions[path] = (versions[path] ?: 0) + 1
         if (!assignsRemoteIds) return null
         if (created || path !in ids) ids[path] = "id-${nextId++}"
         return ids.getValue(path)
@@ -108,6 +129,7 @@ public class FakeCloudStorage(
         if (failDeletes) throw CloudStorageException(CloudError.Transport, "delete failed: $path")
         deleteLog += path
         remote.remove(path)
+        versions.remove(path)
         ids.remove(path)
     }
 }
